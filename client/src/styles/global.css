@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Light Theme Variables */
+  --primary-light: #9D7ED8;
+  --secondary-light: #E0C3FC;
+  --background-light: #F9F7FA;
+  --text-dark-light: #2E2E2E;
+  --text-muted-light: #6B6B6B;
+  --hover-light: #B89FED;
+  
+  /* Dark Theme Variables */
+  --primary-dark: #6A5ACD;
+  --secondary-dark: #3E2F5B;
+  --background-dark: #1E1E2F;
+  --text-light-dark: #F0EFFF;
+  --text-muted-dark: #BBBBBB;
+  
+  /* Common Variables */
+  --transition-speed: 0.3s;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --box-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='light'] {
+  --primary: var(--primary-light);
+  --secondary: var(--secondary-light);
+  --background: var(--background-light);
+  --text: var(--text-dark-light);
+  --text-muted: var(--text-muted-light);
+  --hover: var(--hover-light);
+}
+
+[data-theme='dark'] {
+  --primary: var(--primary-dark);
+  --secondary: var(--secondary-dark);
+  --background: var(--background-dark);
+  --text: var(--text-light-dark);
+  --text-muted: var(--text-muted-dark);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  transition: background-color var(--transition-speed) ease-in-out,
+              color var(--transition-speed) ease-in-out;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease-in-out;
+}
+
+a:hover {
+  color: var(--hover);
+}
+
+button {
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Utility Classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-speed) ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+}
+
+/* Accessibility */
+:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+} 
