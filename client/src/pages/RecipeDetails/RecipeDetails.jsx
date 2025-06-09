@@ -1,174 +1,199 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleFavorite, addComment, deleteComment } from '../../store/recipesSlice';
+import { fetchRecipeById, toggleFavorite } from '../../store/recipesSlice';
 import Button from '../../components/Button/Button';
-import styles from './RecipeDetails.module.css';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL, DEFAULT_IMAGE } from '../../config';
+import styles from './RecipeDetails.module.css';
 
 const RecipeDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [recipe, setRecipe] = useState(null);
-  const [comments, setComments] = useState([]);
-  const isFavorite = useSelector(state => 
-    state.recipes.favorites.includes(parseInt(id))
-  );
+  const { recipes, loading, error } = useSelector(state => state.recipes);
+  const recipe = recipes.find(r => r.id === id);
 
-  const [checkedIngredients, setCheckedIngredients] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [editData, setEditData] = useState(null);
+  const [editData, setEditData] = useState({
+    title: '',
+    ingredients: '',
+    steps: '',
+    tags: '',
+    image: null
+  });
+  const [checkedIngredients, setCheckedIngredients] = useState([]);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    // Reset checked ingredients when recipe changes
-    setCheckedIngredients([]);
-  }, [id]);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    dispatch(fetchRecipeById(id));
+  }, [dispatch, id, user, navigate]);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`http://localhost:5000/api/recipes/${id}`)
-      .then(res => res.json())
-      .then(data => { setRecipe(data); setLoading(false); })
-      .catch(err => { setError('Failed to load recipe'); setLoading(false); });
-  }, [id]);
+    if (recipe) {
+      setEditData({
+        title: recipe.title,
+        ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : '',
+        steps: recipe.steps || '',
+        tags: Array.isArray(recipe.tags) ? recipe.tags.join(', ') : '',
+        image: null
+      });
+    }
+  }, [recipe]);
 
-  useEffect(() => {
-    fetch(`http://localhost:5000/api/recipes/${id}/comments`)
-      .then(res => res.json())
-      .then(setComments)
-      .catch(() => setComments([]));
-  }, [id]);
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const formData = new FormData();
+      formData.append('title', editData.title);
+      formData.append('ingredients', JSON.stringify(editData.ingredients.split('\n').map(i => i.trim())));
+      formData.append('steps', editData.steps);
+      formData.append('tags', JSON.stringify(editData.tags.split(',').map(t => t.trim())));
+      if (editData.image) formData.append('image', editData.image);
+
+      const response = await fetch(`${API_URL}/recipes/${id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update recipe');
+      }
+
+      dispatch(fetchRecipeById(id));
+      setEditMode(false);
+    } catch (err) {
+      console.error('Error updating recipe:', err);
+      alert(err.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this recipe?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${API_URL}/recipes/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete recipe');
+      }
+
+      navigate('/browse');
+    } catch (err) {
+      console.error('Error deleting recipe:', err);
+      alert(err.message);
+    }
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const toggleIngredient = (index) => {
     setCheckedIngredients(prev => 
-      prev.includes(index)
+      prev.includes(index) 
         ? prev.filter(i => i !== index)
         : [...prev, index]
     );
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    setIsSubmitting(true);
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/recipes/${id}/comments`, {
+      const response = await fetch(`${API_URL}/recipes/${id}/favorite`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ text: commentText })
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.ok) {
-        const newComment = await res.json();
-        setComments(prev => [...prev, newComment]);
-        setCommentText('');
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle favorite');
       }
-    } catch (error) {}
-    setIsSubmitting(false);
-  };
 
-  const handleDeleteComment = (commentId) => {
-    dispatch(deleteComment({ recipeId: parseInt(id), commentId }));
-  };
-
-  const toggleFavorite = () => {
-    dispatch(toggleFavorite(parseInt(id)));
+      const data = await response.json();
+      setIsFavorite(data.isFavorite);
+      dispatch(toggleFavorite(recipe.id));
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      alert('Failed to update favorite status');
+    }
   };
 
   const shareRecipe = () => {
-    // Implement share functionality
-    navigator.clipboard.writeText(window.location.href);
-    alert('Recipe link copied to clipboard!');
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this recipe?')) return;
-    const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/recipes/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (res.ok) window.location.href = '/browse';
-    else alert('Failed to delete recipe');
-  };
-
-  const handleEditClick = () => {
-    setEditData({
-      title: recipe.title,
-      ingredients: recipe.ingredients.join('\n'),
-      steps: Array.isArray(recipe.instructions) ? recipe.instructions.join('\n') : recipe.instructions,
-      tags: recipe.tags.join(', '),
-      // image: null (handled separately)
-    });
-    setEditMode(true);
-  };
-
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    const fd = new FormData();
-    fd.append('title', editData.title);
-    fd.append('ingredients', JSON.stringify(editData.ingredients.split('\n')));
-    fd.append('steps', editData.steps);
-    fd.append('tags', JSON.stringify(editData.tags.split(',').map(t => t.trim())));
-    if (editData.image) fd.append('image', editData.image);
-    const res = await fetch(`http://localhost:5000/api/recipes/${id}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setRecipe(updated);
-      setEditMode(false);
+    if (navigator.share) {
+      navigator.share({
+        title: recipe.title,
+        text: `Check out this recipe: ${recipe.title}`,
+        url: window.location.href
+      }).catch(console.error);
     } else {
-      alert('Failed to update recipe');
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => alert('Link copied to clipboard!'))
+        .catch(console.error);
     }
   };
 
   if (loading) return <div className={styles.loading}>Loading recipe...</div>;
-  if (error) return <div className={styles.loading}>{error}</div>;
-  if (!recipe) return <div className={styles.loading}>Recipe not found</div>;
+  if (error) return <div className={styles.error}>{error}</div>;
+  if (!recipe) return <div className={styles.error}>Recipe not found</div>;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.banner}>
           <img
-            src={recipe.image}
+            src={recipe.imageUrl || DEFAULT_IMAGE}
             alt={recipe.title}
             className={styles.bannerImage}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = DEFAULT_IMAGE;
+            }}
           />
           <div className={styles.overlay}>
             <h1 className={styles.title}>{recipe.title}</h1>
             <div className={styles.meta}>
               <div className={styles.rating}>
-                ⭐ {recipe.rating.toFixed(1)}
+                ⭐ {recipe.rating?.toFixed(1) || '0.0'}
               </div>
               <div className={styles.author}>
                 <img
-                  src={recipe.authorAvatar || 'https://source.unsplash.com/random/100x100/?portrait'}
-                  alt={recipe.author}
+                  src={recipe.author?.avatar || 'https://source.unsplash.com/random/100x100/?portrait'}
+                  alt={recipe.author?.username}
                   className={styles.avatar}
                 />
-                <span>{recipe.author}</span>
+                <span>{recipe.author?.username || 'Unknown'}</span>
               </div>
             </div>
             <div className={styles.actions}>
-              <Button variant="outline" onClick={toggleFavorite}>
+              <Button variant="outline" onClick={handleToggleFavorite}>
                 {isFavorite ? '❤️ Saved' : '🤍 Save'}
               </Button>
               <Button variant="outline" onClick={shareRecipe}>
@@ -184,7 +209,7 @@ const RecipeDetails = () => {
           <section className={styles.ingredients}>
             <h2>Ingredients</h2>
             <ul className={styles.ingredientsList}>
-              {recipe.ingredients?.map((ingredient, index) => (
+              {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ingredient, index) => (
                 <li key={index} className={styles.ingredient}>
                   <label>
                     <input
@@ -202,53 +227,12 @@ const RecipeDetails = () => {
 
           <section className={styles.instructions}>
             <h2>Instructions</h2>
-            {recipe.instructions?.map((step, index) => (
+            {recipe.steps?.split('\n').map((step, index) => (
               <div key={index} className={styles.step}>
                 <div className={styles.stepNumber}>{index + 1}</div>
                 <p>{step}</p>
               </div>
             ))}
-          </section>
-
-          <section className={styles.comments}>
-            <h2>Comments</h2>
-            <form onSubmit={handleCommentSubmit} className={styles.commentForm}>
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Write a comment..."
-                className={styles.commentInput}
-                disabled={isSubmitting}
-              />
-              <Button 
-                type="submit" 
-                variant="primary"
-                disabled={!commentText.trim() || isSubmitting}
-              >
-                {isSubmitting ? 'Posting...' : 'Post Comment'}
-              </Button>
-            </form>
-
-            <div className={styles.commentsList}>
-              {comments.map(comment => (
-                <div key={comment.id} className={styles.comment}>
-                  <div className={styles.commentHeader}>
-                    <img src={comment.authorAvatar} alt={comment.author} className={styles.avatar} />
-                    <div>
-                      <strong>{comment.author}</strong>
-                      <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <button 
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className={styles.deleteComment}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <p>{comment.text}</p>
-                </div>
-              ))}
-            </div>
           </section>
         </div>
 
@@ -272,7 +256,7 @@ const RecipeDetails = () => {
           </div>
 
           <div className={styles.tags}>
-            {recipe.tags?.map(tag => (
+            {Array.isArray(recipe.tags) && recipe.tags.map(tag => (
               <span key={tag} className={styles.tag}>
                 {tag}
               </span>
@@ -282,20 +266,55 @@ const RecipeDetails = () => {
       </div>
 
       {user && recipe.author && user.id === recipe.author._id && !editMode && (
-        <>
+        <div className={styles.actions}>
           <Button variant="outline" onClick={handleDelete}>Delete</Button>
-          <Button variant="outline" onClick={handleEditClick}>Edit</Button>
-        </>
+          <Button variant="outline" onClick={() => setEditMode(true)}>Edit</Button>
+        </div>
       )}
+
       {editMode && (
-        <form onSubmit={handleEditSubmit} className={styles.editForm} style={{margin:'2rem 0'}}>
-          <input name="title" value={editData.title} onChange={handleEditChange} className={styles.input} />
-          <textarea name="ingredients" value={editData.ingredients} onChange={handleEditChange} className={styles.textarea} />
-          <textarea name="steps" value={editData.steps} onChange={handleEditChange} className={styles.textarea} />
-          <input name="tags" value={editData.tags} onChange={handleEditChange} className={styles.input} />
-          <input type="file" name="image" onChange={e => setEditData(prev => ({ ...prev, image: e.target.files[0] }))} />
-          <Button type="submit" variant="primary">Save</Button>
-          <Button type="button" variant="outline" onClick={()=>setEditMode(false)}>Cancel</Button>
+        <form onSubmit={handleEditSubmit} className={styles.editForm}>
+          <input 
+            name="title" 
+            value={editData.title} 
+            onChange={handleEditChange} 
+            className={styles.input}
+            placeholder="Recipe Title"
+            required
+          />
+          <textarea 
+            name="ingredients" 
+            value={editData.ingredients} 
+            onChange={handleEditChange} 
+            className={styles.textarea}
+            placeholder="Ingredients (one per line)"
+            required
+          />
+          <textarea 
+            name="steps" 
+            value={editData.steps} 
+            onChange={handleEditChange} 
+            className={styles.textarea}
+            placeholder="Instructions (one step per line)"
+            required
+          />
+          <input 
+            name="tags" 
+            value={editData.tags} 
+            onChange={handleEditChange} 
+            className={styles.input}
+            placeholder="Tags (comma separated)"
+          />
+          <input 
+            type="file" 
+            name="image" 
+            onChange={e => setEditData(prev => ({ ...prev, image: e.target.files[0] }))} 
+            accept="image/*"
+          />
+          <div className={styles.formActions}>
+            <Button type="submit" variant="primary">Save Changes</Button>
+            <Button type="button" variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
+          </div>
         </form>
       )}
     </div>

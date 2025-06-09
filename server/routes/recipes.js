@@ -18,6 +18,35 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json(recipes);
 }));
 
+// Get single recipe by ID
+router.get('/:id', asyncHandler(async (req, res) => {
+  const recipe = await Recipe.findById(req.params.id)
+    .populate('author', 'username email')
+    .lean();
+
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recipe not found' });
+  }
+
+  // Format the response
+  const responseRecipe = {
+    ...recipe,
+    id: recipe._id.toString(),
+    _id: recipe._id.toString(),
+    author: {
+      id: recipe.author._id.toString(),
+      username: recipe.author.username,
+      email: recipe.author.email
+    },
+    rating: recipe.rating || 0,
+    comments: recipe.comments || [],
+    createdAt: recipe.createdAt ? recipe.createdAt.toISOString() : new Date().toISOString(),
+    updatedAt: recipe.updatedAt ? recipe.updatedAt.toISOString() : new Date().toISOString()
+  };
+
+  res.json(responseRecipe);
+}));
+
 // Create new recipe
 router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => {
   console.log('Received recipe creation request');
@@ -204,6 +233,33 @@ router.delete('/:id/comments/:commentId', auth, asyncHandler(async (req, res) =>
   recipe.comments = (recipe.comments || []).filter(c => c._id.toString() !== req.params.commentId);
   await recipe.save();
   res.json({ message: 'Comment deleted' });
+}));
+
+// Toggle favorite recipe
+router.post('/:id/favorite', auth, asyncHandler(async (req, res) => {
+  const recipe = await Recipe.findById(req.params.id);
+  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+
+  const user = await User.findById(req.user._id);
+  const recipeIndex = user.savedRecipes.indexOf(recipe._id);
+
+  if (recipeIndex === -1) {
+    user.savedRecipes.push(recipe._id);
+  } else {
+    user.savedRecipes.splice(recipeIndex, 1);
+  }
+
+  await user.save();
+  res.json({ 
+    isFavorite: recipeIndex === -1,
+    savedRecipes: user.savedRecipes 
+  });
+}));
+
+// Get user's favorite recipes
+router.get('/favorites', auth, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate('savedRecipes');
+  res.json(user.savedRecipes);
 }));
 
 // More routes (create, update, delete) can be added here
