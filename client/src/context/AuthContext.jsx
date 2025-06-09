@@ -3,7 +3,13 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'));
+    } catch {
+      return null;
+    }
+  });
 
   const login = async (email, password) => {
     try {
@@ -14,9 +20,15 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Login failed');
+      
+      // Update state and storage synchronously
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
+      
+      // Dispatch event to notify components of user change
+      window.dispatchEvent(new Event('userChanged'));
+      
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -32,9 +44,14 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Registration failed');
+      
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
+      
+      // Dispatch event to notify components of user change
+      window.dispatchEvent(new Event('userChanged'));
+      
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -45,43 +62,49 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    // Dispatch event to notify components of user change
+    window.dispatchEvent(new Event('userChanged'));
   };
 
-  // Mock function to update user profile
-  const updateProfile = async (name, avatar) => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        setUser(prevUser => {
-          if (prevUser) {
-            const updatedUser = { ...prevUser, name, avatar };
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            return updatedUser;
-          }
-          return null;
-        });
-        resolve({ success: true });
-      }, 500);
-    });
-  };
+  // Listen for storage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem('user');
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    };
 
-  // Mock function to update user password
-  const updatePassword = async (currentPassword, newPassword) => {
-     return new Promise(resolve => {
-      setTimeout(() => {
-         // In a real app, you'd verify currentPassword
-         // For this mock, we just simulate success
-        resolve({ success: true });
-      }, 500);
-    });
-  };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const value = {
     user,
     login,
     register,
     logout,
-    updateProfile,
-    updatePassword
+    updateProfile: async (name, avatar) => {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          setUser(prevUser => {
+            if (prevUser) {
+              const updatedUser = { ...prevUser, name, avatar };
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+              window.dispatchEvent(new Event('userChanged'));
+              return updatedUser;
+            }
+            return null;
+          });
+          resolve({ success: true });
+        }, 500);
+      });
+    },
+    updatePassword: async (currentPassword, newPassword) => {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve({ success: true });
+        }, 500);
+      });
+    }
   };
 
   return (

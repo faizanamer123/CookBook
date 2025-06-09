@@ -169,8 +169,8 @@ const Home = () => {
                 key={recipe.id || recipe._id}
                 id={recipe.id || recipe._id}
                 title={recipe.title}
-                image={recipe.image}
-                rating={recipe.rating}
+                imageUrl={recipe.imageUrl}
+                rating={recipe.rating || 0}
                 cookTime={recipe.cookTime}
                 author={recipe.author}
                 tags={recipe.tags}

@@ -5,9 +5,10 @@ import { FaStar, FaClock, FaUser } from 'react-icons/fa';
 import { DEFAULT_IMAGE } from '../../config';
 import styles from './RecipeCard.module.css';
 
-const RecipeCard = ({ id, title, image, rating = 0, cookTime = '', author = '', tags = [] }) => {
+const RecipeCard = ({ id, title, imageUrl, rating = 0, cookTime = '', author = '', tags = [] }) => {
   const authorName = typeof author === 'object' ? author.username : author;
   const displayTags = tags.slice(0, 3);
+  const displayCookTime = typeof cookTime === 'number' ? `${cookTime} mins` : cookTime;
 
   const handleImageError = (e) => {
     e.target.onerror = null;
@@ -18,7 +19,7 @@ const RecipeCard = ({ id, title, image, rating = 0, cookTime = '', author = '', 
     <Link to={`/recipe/${id}`} className={styles.card}>
       <div className={styles.imageContainer}>
         <img 
-          src={image || DEFAULT_IMAGE} 
+          src={imageUrl || DEFAULT_IMAGE} 
           alt={title}
           onError={handleImageError}
           loading="lazy"
@@ -33,7 +34,7 @@ const RecipeCard = ({ id, title, image, rating = 0, cookTime = '', author = '', 
           </div>
           <div className={styles.cookTime}>
             <FaClock className={styles.icon} />
-            <span>{cookTime}</span>
+            <span>{displayCookTime}</span>
           </div>
         </div>
         <div className={styles.author}>
@@ -57,9 +58,9 @@ const RecipeCard = ({ id, title, image, rating = 0, cookTime = '', author = '', 
 RecipeCard.propTypes = {
   id: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
-  image: PropTypes.string,
+  imageUrl: PropTypes.string,
   rating: PropTypes.number,
-  cookTime: PropTypes.string,
+  cookTime: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   author: PropTypes.oneOfType([
     PropTypes.string,
     PropTypes.shape({

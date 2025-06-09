@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button/Button';
 import styles from './Login.module.css';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Login = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -99,27 +101,13 @@ const Login = () => {
     if (!validateForm()) return;
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email: formData.email, password: formData.password })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.message || 'Login failed. Please try again.');
+      const result = await login(formData.email, formData.password);
+      if (!result.success) {
+        throw new Error(result.error || 'Login failed. Please try again.');
       }
-      
       setErrors({});
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('token', data.token);
-      window.dispatchEvent(new Event('userChanged'));
-      navigate('/');
+      // Navigate after successful login
+      navigate('/', { replace: true });
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {

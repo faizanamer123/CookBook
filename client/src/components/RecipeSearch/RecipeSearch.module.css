@@ -13,58 +13,65 @@
   font-size: 1rem;
 }
 
-.react-select__control {
-  background-color: var(--background);
-  border-color: var(--border-color);
-  color: var(--text);
-  min-height: 44px;
-  border-radius: 0.5rem;
-  box-shadow: none;
-  transition: border-color 0.2s;
+/* Override react-select styles */
+:global(.react-select__menu) {
+  background-color: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ddd !important;
 }
 
-.react-select__control--is-focused {
-  border-color: var(--primary);
+:global(.react-select__option) {
+  background-color: #fff !important;
+  color: #000 !important;
 }
 
-.react-select__menu {
-  background-color: var(--background);
-  color: var(--text);
-  border-radius: 0.5rem;
-  z-index: 10;
+:global(.react-select__option--is-focused) {
+  background-color: #f0f0f0 !important;
+  color: #000 !important;
 }
 
-.react-select__option {
-  background-color: transparent;
-  color: var(--text);
-  cursor: pointer;
+:global(.react-select__option--is-selected) {
+  background-color: var(--primary) !important;
+  color: #fff !important;
 }
 
-.react-select__option--is-focused {
-  background-color: var(--primary-light);
+:global(.react-select__input) {
+  color: var(--text) !important;
 }
 
-.react-select__option--is-selected {
-  background-color: var(--primary);
-  color: var(--text);
+:global(.react-select__placeholder) {
+  color: #666 !important;
 }
 
-.react-select__multi-value {
-  background-color: var(--primary-light);
-  color: var(--text);
-  border-radius: 1rem;
+:global(.react-select__single-value) {
+  color: var(--text) !important;
 }
 
-.react-select__multi-value__label {
-  color: var(--text);
+:global(.react-select__control) {
+  background-color: var(--background) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text) !important;
 }
 
-.react-select__multi-value__remove {
-  color: var(--primary);
-  cursor: pointer;
+:global(.react-select__control--is-focused) {
+  border-color: var(--primary) !important;
+  box-shadow: none !important;
 }
 
-.react-select__multi-value__remove:hover {
-  background-color: var(--primary);
-  color: var(--background);
+:global(.react-select__multi-value) {
+  background-color: var(--primary-light) !important;
+  color: var(--text) !important;
+}
+
+:global(.react-select__multi-value__label) {
+  color: var(--text) !important;
+}
+
+:global(.react-select__multi-value__remove) {
+  color: var(--primary) !important;
+}
+
+:global(.react-select__multi-value__remove:hover) {
+  background-color: var(--primary) !important;
+  color: var(--background) !important;
 }
