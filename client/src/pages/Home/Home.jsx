@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button/Button';
 import RecipeCard from '../../components/RecipeCard/RecipeCard';
+import { API_URL } from '../../config';
 import styles from './Home.module.css';
 import { useAuth } from '../../context/AuthContext';
 import { FiUser, FiEdit, FiKey, FiLogOut, FiChevronDown } from 'react-icons/fi';
@@ -39,7 +40,7 @@ const Home = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/recipes')
+    fetch(`${API_URL}/recipes`)
       .then(res => res.json())
       .then(data => setFeaturedRecipes(data.slice(0, 3)))
       .catch(err => console.error('Failed to fetch recipes', err));

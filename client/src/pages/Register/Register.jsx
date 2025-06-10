@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button/Button';
 import styles from './Register.module.css';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { API_URL } from '../../config';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -127,7 +128,7 @@ const Register = () => {
     if (!validateForm()) return;
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: formData.name, email: formData.email, password: formData.password })
