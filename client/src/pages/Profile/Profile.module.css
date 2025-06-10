@@ -1,0 +1,102 @@
+.profile {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background-color: var(--background);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.profilePicture {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--primary);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.userDetails {
+  flex: 1;
+}
+
+.userDetails h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.email {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.content {
+  display: grid;
+  gap: 3rem;
+}
+
+.section {
+  background-color: var(--background);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+
+.recipeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.recipeCard {
+  background-color: var(--card-background);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.recipeCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.recipeCard img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.recipeCard h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 1rem;
+  color: var(--text);
+}
+
+.recipeCard p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0 1rem 1rem;
+  line-height: 1.5;
+} 
