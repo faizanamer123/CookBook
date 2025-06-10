@@ -9,7 +9,7 @@ import styles from './RecipeDetails.module.css';
 
 const RecipeDetails = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { recipes, loading, error } = useSelector(state => state.recipes);
@@ -32,6 +32,8 @@ const RecipeDetails = () => {
   const [recipeData, setRecipeData] = useState(null);
   const [localError, setLocalError] = useState(null);
   const [localLoading, setLocalLoading] = useState(true);
+  const [commentError, setCommentError] = useState(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -189,14 +191,21 @@ const RecipeDetails = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated - please login again');
+      }
+      
       const response = await fetch(`${API_URL}/recipes/${id}/bookmark`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle bookmark');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to toggle bookmark');
       }
 
       const data = await response.json();
@@ -204,7 +213,7 @@ const RecipeDetails = () => {
       dispatch(toggleFavorite(recipeData.id));
     } catch (err) {
       console.error('Error toggling bookmark:', err);
-      alert('Failed to update bookmark status');
+      alert('Failed to update bookmark status: ' + err.message);
     }
   };
   
@@ -215,14 +224,21 @@ const RecipeDetails = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated - please login again');
+      }
+      
       const response = await fetch(`${API_URL}/recipes/${id}/like`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle like');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to toggle like');
       }
 
       const data = await response.json();
@@ -234,7 +250,7 @@ const RecipeDetails = () => {
       }
     } catch (err) {
       console.error('Error toggling like:', err);
-      alert('Failed to update like status');
+      alert('Failed to update like status: ' + err.message);
     }
   };
   
@@ -242,10 +258,13 @@ const RecipeDetails = () => {
     e.preventDefault();
     if (!commentText.trim()) return;
     
+    // Clear previous errors
+    setCommentError(null);
+    setSubmittingComment(true);
+    
     try {
-      const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('Not authenticated');
+        throw new Error('Authentication required - please login again');
       }
 
       const response = await fetch(`${API_URL}/recipes/${id}/comments`, {
@@ -261,7 +280,14 @@ const RecipeDetails = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add comment');
+        // Try to get a more specific error message
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Failed to add comment (${response.status})`);
+        } catch (parseError) {
+          // If we can't parse the error JSON
+          throw new Error(`Server error ${response.status}: Could not add comment`);
+        }
       }
 
       const data = await response.json();
@@ -275,7 +301,9 @@ const RecipeDetails = () => {
       }
     } catch (err) {
       console.error('Error adding comment:', err);
-      alert(err.message);
+      setCommentError(err.message);
+    } finally {
+      setSubmittingComment(false);
     }
   };
 
@@ -456,8 +484,18 @@ const RecipeDetails = () => {
                   required
                   className={styles.commentTextarea}
                 />
-                <Button type="submit" variant="primary" fullWidth>
-                  Add Comment
+                {commentError && (
+                  <div className={styles.errorMessage}>
+                    Error: {commentError}
+                  </div>
+                )}
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  fullWidth
+                  disabled={submittingComment}
+                >
+                  {submittingComment ? 'Adding...' : 'Add Comment'}
                 </Button>
               </form>
             </div>

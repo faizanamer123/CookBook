@@ -16,6 +16,11 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('token');
   });
 
+  // Add a function to check if token is valid
+  const isAuthenticated = () => {
+    return !!token;
+  };
+
   const login = async (email, password) => {
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -172,6 +177,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     token,
+    isAuthenticated,
     login,
     register,
     logout,
