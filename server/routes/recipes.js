@@ -20,37 +20,44 @@ router.get('/', asyncHandler(async (req, res) => {
 
 // Get single recipe by ID
 router.get('/:id', asyncHandler(async (req, res) => {
-  const recipe = await Recipe.findById(req.params.id)
-    .populate('author', 'username email profilePicture')
-    .lean();
+  try {
+    const recipe = await Recipe.findById(req.params.id)
+      .populate('author', 'username email profilePicture')
+      .lean();
 
-  if (!recipe) {
-    return res.status(404).json({ message: 'Recipe not found' });
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
+
+    // Increment view count
+    await Recipe.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } });
+    recipe.viewCount = (recipe.viewCount || 0) + 1;
+
+    // Format the response
+    const responseRecipe = {
+      ...recipe,
+      id: recipe._id.toString(),
+      _id: recipe._id.toString(),
+      author: {
+        id: recipe.author._id.toString(),
+        username: recipe.author.username,
+        email: recipe.author.email,
+        profilePicture: recipe.author.profilePicture
+      },
+      likeCount: recipe.likes ? recipe.likes.length : 0,
+      averageRating: recipe.averageRating || 0,
+      comments: recipe.comments || [],
+      createdAt: recipe.createdAt ? recipe.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: recipe.updatedAt ? recipe.updatedAt.toISOString() : new Date().toISOString()
+    };
+
+    // Ensure we're sending a proper JSON response
+    res.setHeader('Content-Type', 'application/json');
+    return res.json(responseRecipe);
+  } catch (error) {
+    console.error('Error fetching recipe:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  // Increment view count
-  await Recipe.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } });
-  recipe.viewCount = (recipe.viewCount || 0) + 1;
-
-  // Format the response
-  const responseRecipe = {
-    ...recipe,
-    id: recipe._id.toString(),
-    _id: recipe._id.toString(),
-    author: {
-      id: recipe.author._id.toString(),
-      username: recipe.author.username,
-      email: recipe.author.email,
-      profilePicture: recipe.author.profilePicture
-    },
-    likeCount: recipe.likes ? recipe.likes.length : 0,
-    averageRating: recipe.averageRating || 0,
-    comments: recipe.comments || [],
-    createdAt: recipe.createdAt ? recipe.createdAt.toISOString() : new Date().toISOString(),
-    updatedAt: recipe.updatedAt ? recipe.updatedAt.toISOString() : new Date().toISOString()
-  };
-
-  res.json(responseRecipe);
 }));
 
 // Create new recipe
@@ -206,56 +213,97 @@ router.put('/:id', auth, asyncHandler(async (req, res) => {
 // Delete recipe
 router.delete('/:id', auth, asyncHandler(async (req, res) => {
   const recipe = await Recipe.findById(req.params.id);
-  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
-  if (recipe.author.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' });
-  await recipe.deleteOne();
-  res.json({ message: 'Recipe deleted' });
+  
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recipe not found' });
+  }
+  
+  // Check if user is authorized to delete (either author or admin)
+  if (recipe.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Not authorized to delete this recipe' });
+  }
+  
+  // If there's an image, we could delete it from Cloudinary
+  if (recipe.imageUrl && recipe.imageUrl.includes('cloudinary')) {
+    try {
+      const publicId = recipe.imageUrl.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`cookbook/${publicId}`);
+    } catch (error) {
+      console.error('Error deleting image from Cloudinary:', error);
+      // Continue with recipe deletion even if image deletion fails
+    }
+  }
+  
+  await Recipe.deleteOne({ _id: req.params.id });
+  
+  res.json({ message: 'Recipe deleted successfully' });
 }));
 
 // Get comments for a recipe
 router.get('/:id/comments', asyncHandler(async (req, res) => {
   const recipe = await Recipe.findById(req.params.id)
-    .populate({
-      path: 'comments.author',
-      select: 'username profilePicture'
-    });
+    .populate('comments.author', 'username profilePicture');
     
-  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
-  res.json(recipe.comments || []);
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recipe not found' });
+  }
+  
+  res.json({
+    comments: recipe.comments || []
+  });
 }));
 
 // Add a comment with rating
 router.post('/:id/comments', auth, asyncHandler(async (req, res) => {
+  const recipeId = req.params.id;
+  const userId = req.user._id;
   const { text, rating } = req.body;
-  if (!text) return res.status(400).json({ message: 'Comment text is required' });
   
-  const recipe = await Recipe.findById(req.params.id);
-  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+  if (!text) {
+    return res.status(400).json({ message: 'Comment text is required' });
+  }
   
+  if (rating && (rating < 1 || rating > 5)) {
+    return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+  }
+  
+  const recipe = await Recipe.findById(recipeId);
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recipe not found' });
+  }
+  
+  // Create the comment object
   const comment = {
     _id: new mongoose.Types.ObjectId(),
-    author: req.user._id,
+    author: userId,
     authorName: req.user.username,
     text,
-    rating: rating ? parseInt(rating) : undefined,
+    rating: rating || 0,
     createdAt: new Date()
   };
   
-  recipe.comments = recipe.comments || [];
+  // Add the comment to the recipe
+  if (!recipe.comments) {
+    recipe.comments = [];
+  }
   recipe.comments.push(comment);
+  
+  // Calculate new average rating
+  if (rating) {
+    const validRatings = recipe.comments
+      .filter(c => c.rating && c.rating > 0)
+      .map(c => c.rating);
+      
+    const sum = validRatings.reduce((acc, curr) => acc + curr, 0);
+    recipe.averageRating = validRatings.length > 0 ? sum / validRatings.length : 0;
+  }
+  
   await recipe.save();
   
-  const populatedRecipe = await Recipe.findById(req.params.id)
-    .populate({
-      path: 'comments.author',
-      select: 'username profilePicture'
-    });
-  
-  const newComment = populatedRecipe.comments.find(c => c._id.toString() === comment._id.toString());
-  
   res.status(201).json({
-    comment: newComment,
-    averageRating: populatedRecipe.averageRating
+    message: 'Comment added successfully',
+    comment,
+    averageRating: recipe.averageRating
   });
 }));
 
@@ -284,35 +332,46 @@ router.delete('/:id/comments/:commentId', auth, asyncHandler(async (req, res) =>
 
 // Toggle like for a recipe
 router.post('/:id/like', auth, asyncHandler(async (req, res) => {
-  const recipe = await Recipe.findById(req.params.id);
-  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
-
-  const userIndex = recipe.likes.findIndex(userId => 
-    userId.toString() === req.user._id.toString());
+  const recipeId = req.params.id;
+  const userId = req.user._id;
   
-  // Toggle like
-  if (userIndex === -1) {
-    recipe.likes.push(req.user._id);
-    
-    // Also add to user's liked recipes
-    await User.findByIdAndUpdate(
-      req.user._id,
-      { $addToSet: { likedRecipes: recipe._id } }
-    );
+  const recipe = await Recipe.findById(recipeId);
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recipe not found' });
+  }
+  
+  const isLiked = recipe.likes.includes(userId);
+  
+  if (isLiked) {
+    // Unlike the recipe
+    recipe.likes = recipe.likes.filter(id => id.toString() !== userId.toString());
   } else {
-    recipe.likes.splice(userIndex, 1);
-    
-    // Also remove from user's liked recipes
-    await User.findByIdAndUpdate(
-      req.user._id,
-      { $pull: { likedRecipes: recipe._id } }
-    );
+    // Like the recipe
+    recipe.likes.push(userId);
   }
   
   await recipe.save();
   
   res.json({
-    liked: userIndex === -1,
+    liked: !isLiked,
+    likeCount: recipe.likes.length
+  });
+}));
+
+// Check if user has liked a recipe
+router.get('/:id/like', auth, asyncHandler(async (req, res) => {
+  const recipeId = req.params.id;
+  const userId = req.user._id;
+  
+  const recipe = await Recipe.findById(recipeId);
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recipe not found' });
+  }
+  
+  const isLiked = recipe.likes.includes(userId);
+  
+  res.json({
+    liked: isLiked,
     likeCount: recipe.likes.length
   });
 }));

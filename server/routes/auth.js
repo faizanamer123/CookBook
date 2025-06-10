@@ -153,9 +153,13 @@ router.put('/profile', asyncHandler(async (req, res) => {
     ).select('-password');
     
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+    
+    // Ensure we're sending a proper JSON response
+    res.setHeader('Content-Type', 'application/json');
+    return res.json(user);
   } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
+    console.error('Profile update error:', err);
+    return res.status(401).json({ message: 'Invalid token' });
   }
 }));
 
@@ -193,6 +197,46 @@ router.post('/profile-picture', upload.single('image'), asyncHandler(async (req,
   } catch (err) {
     console.error('Error uploading profile picture:', err);
     res.status(500).json({ message: 'Error uploading profile picture' });
+  }
+}));
+
+// Change password
+router.post('/change-password', asyncHandler(async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+    
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+    
+    user.password = newPassword;
+    await user.save();
+    
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Password change error:', err);
+    res.status(401).json({ message: 'Invalid token or server error' });
   }
 }));
 

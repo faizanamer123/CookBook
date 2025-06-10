@@ -29,51 +29,84 @@ const RecipeDetails = () => {
   const [commentText, setCommentText] = useState('');
   const [commentRating, setCommentRating] = useState(5);
   const [comments, setComments] = useState([]);
+  const [recipeData, setRecipeData] = useState(null);
+  const [localError, setLocalError] = useState(null);
+  const [localLoading, setLocalLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-    dispatch(fetchRecipeById(id));
     
-    // Fetch comments
-    const fetchComments = async () => {
+    // Direct fetch with better error handling
+    const fetchRecipeData = async () => {
       try {
-        const response = await fetch(`${API_URL}/recipes/${id}/comments`);
-        if (response.ok) {
-          const data = await response.json();
-          setComments(data);
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/recipes/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Server responded with status ${response.status}`);
+          } else {
+            // If response isn't JSON, get the text for debugging
+            const errorText = await response.text();
+            console.error('Non-JSON error response:', errorText);
+            throw new Error(`Server responded with status ${response.status}`);
+          }
+        }
+        
+        // Try to safely parse the JSON response
+        try {
+          const textResponse = await response.text();
+          console.log('Raw response:', textResponse);
+          const data = JSON.parse(textResponse);
+          // Store the recipe data in local state
+          setRecipeData(data);
+        } catch (parseError) {
+          console.error('Failed to parse recipe data:', parseError);
+          setLocalError('Invalid JSON response from server');
         }
       } catch (error) {
-        console.error("Error fetching comments:", error);
+        console.error('Error fetching recipe:', error);
+        setLocalError(error.message);
+      } finally {
+        setLocalLoading(false);
       }
     };
     
-    fetchComments();
+    fetchRecipeData();
+    // Only call the Redux action if you still want to use Redux
+    dispatch(fetchRecipeById(id));
   }, [dispatch, id, user, navigate]);
 
   useEffect(() => {
-    if (recipe) {
+    if (recipeData) {
       setEditData({
-        title: recipe.title,
-        ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : '',
-        steps: recipe.steps || '',
-        tags: Array.isArray(recipe.tags) ? recipe.tags.join(', ') : '',
+        title: recipeData.title,
+        ingredients: Array.isArray(recipeData.ingredients) ? recipeData.ingredients.join('\n') : '',
+        steps: recipeData.steps || '',
+        tags: Array.isArray(recipeData.tags) ? recipeData.tags.join(', ') : '',
         image: null
       });
       
       // Check if recipe is in user's liked recipes
       if (user && user.likedRecipes) {
-        setIsLiked(user.likedRecipes.includes(recipe.id));
+        setIsLiked(user.likedRecipes.includes(recipeData.id));
       }
       
       // Check if recipe is in user's saved recipes
       if (user && user.savedRecipes) {
-        setIsFavorite(user.savedRecipes.includes(recipe.id));
+        setIsFavorite(user.savedRecipes.includes(recipeData.id));
       }
     }
-  }, [recipe, user]);
+  }, [recipeData, user]);
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -168,7 +201,7 @@ const RecipeDetails = () => {
 
       const data = await response.json();
       setIsFavorite(data.isBookmarked);
-      dispatch(toggleFavorite(recipe.id));
+      dispatch(toggleFavorite(recipeData.id));
     } catch (err) {
       console.error('Error toggling bookmark:', err);
       alert('Failed to update bookmark status');
@@ -196,8 +229,8 @@ const RecipeDetails = () => {
       setIsLiked(data.liked);
       
       // Update the recipe likes count in the UI
-      if (recipe) {
-        recipe.likeCount = data.likeCount;
+      if (recipeData) {
+        recipeData.likeCount = data.likeCount;
       }
     } catch (err) {
       console.error('Error toggling like:', err);
@@ -237,8 +270,8 @@ const RecipeDetails = () => {
       setCommentRating(5);
       
       // Update recipe's average rating
-      if (recipe) {
-        recipe.averageRating = data.averageRating;
+      if (recipeData) {
+        recipeData.averageRating = data.averageRating;
       }
     } catch (err) {
       console.error('Error adding comment:', err);
@@ -249,8 +282,8 @@ const RecipeDetails = () => {
   const shareRecipe = () => {
     if (navigator.share) {
       navigator.share({
-        title: recipe.title,
-        text: `Check out this recipe: ${recipe.title}`,
+        title: recipeData.title,
+        text: `Check out this recipe: ${recipeData.title}`,
         url: window.location.href
       }).catch(console.error);
     } else {
@@ -260,17 +293,21 @@ const RecipeDetails = () => {
     }
   };
 
-  if (loading) return <div className={styles.loading}>Loading recipe...</div>;
-  if (error) return <div className={styles.error}>{error}</div>;
-  if (!recipe) return <div className={styles.error}>Recipe not found</div>;
+  if (loading || localLoading) return <div className={styles.loading}>Loading recipe...</div>;
+  if (error || localError) return <div className={styles.error}>{error || localError}</div>;
+  
+  // Use either the Redux recipe or the directly fetched recipeData
+  const displayRecipe = recipeData || recipe;
+  
+  if (!displayRecipe) return <div className={styles.error}>Recipe not found</div>;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.banner}>
           <img
-            src={recipe.imageUrl || DEFAULT_IMAGE}
-            alt={recipe.title}
+            src={displayRecipe.imageUrl || DEFAULT_IMAGE}
+            alt={displayRecipe.title}
             className={styles.bannerImage}
             onError={(e) => {
               e.target.onerror = null;
@@ -278,7 +315,7 @@ const RecipeDetails = () => {
             }}
           />
           <div className={styles.overlay}>
-            <h1 className={styles.title}>{recipe.title}</h1>
+            <h1 className={styles.title}>{displayRecipe.title}</h1>
             <div className={styles.meta}>
               <div className={styles.stats}>
                 <div className={styles.stat}>
@@ -286,26 +323,26 @@ const RecipeDetails = () => {
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
-                  <span>{recipe.viewCount || 0}</span>
+                  <span>{displayRecipe.viewCount || 0}</span>
                 </div>
                 <div className={styles.stat}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                   </svg>
-                  <span>{recipe.likeCount || 0}</span>
+                  <span>{displayRecipe.likeCount || 0}</span>
                 </div>
                 <div className={styles.stat}>
                   <span>⭐</span>
-                  <span>{recipe.averageRating?.toFixed(1) || '0.0'}</span>
+                  <span>{displayRecipe.averageRating?.toFixed(1) || '0.0'}</span>
                 </div>
               </div>
               <div className={styles.author}>
                 <img
-                  src={recipe.author?.profilePicture || 'https://source.unsplash.com/random/100x100/?portrait'}
-                  alt={recipe.author?.username}
+                  src={displayRecipe.author?.profilePicture || 'https://source.unsplash.com/random/100x100/?portrait'}
+                  alt={displayRecipe.author?.username}
                   className={styles.avatar}
                 />
-                <span>{recipe.author?.username || 'Unknown'}</span>
+                <span>{displayRecipe.author?.username || 'Unknown'}</span>
               </div>
             </div>
             <div className={styles.actions}>
@@ -331,7 +368,7 @@ const RecipeDetails = () => {
                 </svg>
                 Share
               </Button>
-              {user && recipe.author?.id === user.id && (
+              {user && displayRecipe.author?.id === user.id && (
                 <>
                   <Button variant="outline" onClick={() => setEditMode(true)}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -361,7 +398,7 @@ const RecipeDetails = () => {
           <section className={styles.ingredients}>
             <h2>Ingredients</h2>
             <ul className={styles.ingredientsList}>
-              {Array.isArray(recipe.ingredients) && recipe.ingredients.map((ingredient, index) => (
+              {Array.isArray(displayRecipe.ingredients) && displayRecipe.ingredients.map((ingredient, index) => (
                 <li key={index} className={styles.ingredient}>
                   <label>
                     <input
@@ -382,7 +419,7 @@ const RecipeDetails = () => {
           <section className={styles.instructions}>
             <h2>Instructions</h2>
             <div className={styles.steps}>
-              {recipe.steps && recipe.steps.split('\n').map((step, index) => (
+              {displayRecipe.steps && displayRecipe.steps.split('\n').map((step, index) => (
                 <div key={index} className={styles.step}>
                   <div className={styles.stepNumber}>{index + 1}</div>
                   <p>{step}</p>
@@ -463,23 +500,23 @@ const RecipeDetails = () => {
           <div className={styles.recipeInfo}>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Cook Time</span>
-              <span className={styles.infoValue}>{recipe.cookTime} min</span>
+              <span className={styles.infoValue}>{displayRecipe.cookTime} min</span>
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Servings</span>
-              <span className={styles.infoValue}>{recipe.servings}</span>
+              <span className={styles.infoValue}>{displayRecipe.servings}</span>
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Difficulty</span>
-              <span className={styles.infoValue}>{recipe.difficulty}</span>
+              <span className={styles.infoValue}>{displayRecipe.difficulty}</span>
             </div>
           </div>
 
-          {recipe.tags && recipe.tags.length > 0 && (
+          {displayRecipe.tags && displayRecipe.tags.length > 0 && (
             <div className={styles.tags}>
               <h3>Tags</h3>
               <div className={styles.tagsList}>
-                {recipe.tags.map((tag, index) => (
+                {displayRecipe.tags.map((tag, index) => (
                   <span key={index} className={styles.tag}>
                     {tag}
                   </span>
