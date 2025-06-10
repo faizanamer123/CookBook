@@ -229,8 +229,28 @@ const CreateRecipe = () => {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
-      formDataToSend.append('ingredients', JSON.stringify(formData.ingredients));
-      formDataToSend.append('steps', formData.instructions.map(i => i.trim()).join('\n'));
+      
+      // Convert string ingredients to the required format with name, amount, and unit
+      const formattedIngredients = formData.ingredients
+        .filter(ing => ing.trim()) // Remove empty ingredients
+        .map(ing => {
+          // Simple parsing - assumes format like "2 cups flour" or "1/2 tsp salt"
+          const parts = ing.trim().split(' ');
+          const amount = parts[0] || '1';
+          const unit = parts.length > 2 ? parts[1] : '';
+          const name = parts.length > 2 ? 
+            parts.slice(2).join(' ') : 
+            parts.length > 1 ? parts[1] : ing.trim();
+          
+          return {
+            name: name || ing.trim(),
+            amount: amount,
+            unit: unit
+          };
+        });
+      
+      formDataToSend.append('ingredients', JSON.stringify(formattedIngredients));
+      formDataToSend.append('instructions', JSON.stringify(formData.instructions.filter(i => i.trim())));
       formDataToSend.append('tags', JSON.stringify(formData.tags));
       formDataToSend.append('cookTime', formData.cookTime);
       formDataToSend.append('servings', formData.servings);

@@ -5,6 +5,7 @@ const User = require('../models/User');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { Readable } = require('stream');
+const { auth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -62,7 +63,9 @@ router.post('/register', asyncHandler(async (req, res) => {
       dietaryPreferences: user.dietaryPreferences,
       cookingSkillLevel: user.cookingSkillLevel,
       favoriteCuisines: user.favoriteCuisines,
-      socialMediaLinks: user.socialMediaLinks
+      socialMediaLinks: user.socialMediaLinks,
+      savedRecipes: user.savedRecipes,
+      likedRecipes: user.likedRecipes
     } 
   });
 }));
@@ -97,38 +100,23 @@ router.post('/login', asyncHandler(async (req, res) => {
       dietaryPreferences: user.dietaryPreferences,
       cookingSkillLevel: user.cookingSkillLevel,
       favoriteCuisines: user.favoriteCuisines,
-      socialMediaLinks: user.socialMediaLinks
+      socialMediaLinks: user.socialMediaLinks,
+      savedRecipes: user.savedRecipes,
+      likedRecipes: user.likedRecipes
     } 
   });
 }));
 
 // Get current user
-router.get('/me', asyncHandler(async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
+router.get('/me', auth, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json(user);
 }));
 
 // Update user profile
-router.put('/profile', asyncHandler(async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-  
-  const token = authHeader.split(' ')[1];
+router.put('/profile', auth, asyncHandler(async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { 
       username, 
       bio, 
@@ -146,49 +134,59 @@ router.put('/profile', asyncHandler(async (req, res) => {
     if (favoriteCuisines) updates.favoriteCuisines = favoriteCuisines;
     if (socialMediaLinks) updates.socialMediaLinks = socialMediaLinks;
     
+    // Log the user ID and update object for debugging
+    console.log('Updating user:', req.user._id);
+    console.log('Update data:', updates);
+    
     const user = await User.findByIdAndUpdate(
-      decoded.id, 
+      req.user._id, 
       updates,
       { new: true, runValidators: true }
     ).select('-password');
     
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      console.log('User not found for ID:', req.user._id);
+      return res.status(404).json({ message: 'User not found' });
+    }
     
     // Ensure we're sending a proper JSON response
-    res.setHeader('Content-Type', 'application/json');
     return res.json(user);
   } catch (err) {
     console.error('Profile update error:', err);
-    return res.status(401).json({ message: 'Invalid token' });
+    return res.status(500).json({ message: err.message || 'Error updating profile' });
   }
 }));
 
 // Upload profile picture
-router.post('/profile-picture', upload.single('image'), asyncHandler(async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-  
-  if (!req.file) {
-    return res.status(400).json({ message: 'No image file provided' });
-  }
-  
-  const token = authHeader.split(' ')[1];
+router.post('/profile-picture', auth, upload.single('image'), asyncHandler(async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    // Log for debugging
+    console.log('Uploading profile picture for user:', req.user._id);
+    console.log('File details:', { 
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
     
     // Upload image to Cloudinary
     const result = await uploadToCloudinary(req.file.buffer);
+    console.log('Cloudinary upload result:', result.secure_url);
     
     // Update user profile with the new image URL
     const user = await User.findByIdAndUpdate(
-      decoded.id,
+      req.user._id,
       { profilePicture: result.secure_url },
       { new: true, runValidators: true }
     ).select('-password');
     
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      console.log('User not found for ID:', req.user._id);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
     res.json({ 
       message: 'Profile picture uploaded successfully',
       profilePicture: result.secure_url,
@@ -196,20 +194,13 @@ router.post('/profile-picture', upload.single('image'), asyncHandler(async (req,
     });
   } catch (err) {
     console.error('Error uploading profile picture:', err);
-    res.status(500).json({ message: 'Error uploading profile picture' });
+    res.status(500).json({ message: err.message || 'Error uploading profile picture' });
   }
 }));
 
 // Change password
-router.post('/change-password', asyncHandler(async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
-  }
-  
-  const token = authHeader.split(' ')[1];
+router.post('/change-password', auth, asyncHandler(async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { currentPassword, newPassword } = req.body;
     
     if (!currentPassword || !newPassword) {
@@ -220,7 +211,7 @@ router.post('/change-password', asyncHandler(async (req, res) => {
       return res.status(400).json({ message: 'New password must be at least 6 characters long' });
     }
     
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -236,7 +227,7 @@ router.post('/change-password', asyncHandler(async (req, res) => {
     res.json({ message: 'Password updated successfully' });
   } catch (err) {
     console.error('Password change error:', err);
-    res.status(401).json({ message: 'Invalid token or server error' });
+    res.status(500).json({ message: err.message || 'Error changing password' });
   }
 }));
 
