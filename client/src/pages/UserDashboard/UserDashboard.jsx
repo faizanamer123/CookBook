@@ -80,10 +80,36 @@ const UserDashboard = () => {
     setIsProfileLoading(true);
     setProfileMessage(null);
     try {
-      const result = await updateProfile(profileFormData.name, profileFormData.avatar);
+      const result = await updateProfile({
+        username: profileFormData.name,
+        bio: profileFormData.bio,
+        dietaryPreferences: profileFormData.dietaryPreferences,
+        cookingSkillLevel: profileFormData.cookingSkillLevel,
+        favoriteCuisines: profileFormData.favoriteCuisines,
+        socialMediaLinks: profileFormData.socialMediaLinks
+      });
+      
       if (result.success) {
         setProfileMessage({ type: 'success', text: 'Profile updated successfully!' });
         setIsEditingProfile(false);
+        
+        const updatedUser = JSON.parse(localStorage.getItem('user'));
+        if (updatedUser) {
+          setProfileFormData({
+            name: updatedUser.username || updatedUser.name || '',
+            bio: updatedUser.bio || '',
+            dietaryPreferences: updatedUser.dietaryPreferences || [],
+            cookingSkillLevel: updatedUser.cookingSkillLevel || 'Beginner',
+            favoriteCuisines: updatedUser.favoriteCuisines || [],
+            socialMediaLinks: updatedUser.socialMediaLinks || {
+              facebook: '',
+              twitter: '',
+              instagram: '',
+              pinterest: '',
+              youtube: ''
+            }
+          });
+        }
       } else {
         setProfileMessage({ type: 'error', text: result.error || 'Failed to update profile.' });
       }

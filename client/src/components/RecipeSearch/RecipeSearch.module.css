@@ -75,3 +75,153 @@
   background-color: var(--primary) !important;
   color: var(--background) !important;
 }
+
+.searchContainer {
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+}
+
+.searchBar {
+  display: flex;
+  width: 100%;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: var(--background-light, #fff);
+  overflow: hidden;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  font-size: 1rem;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+}
+
+.filterToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 1.5rem;
+  background: var(--primary, #6c5ce7);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.filterToggle:hover {
+  background: var(--primary-dark, #5549c9);
+}
+
+.filtersPanel {
+  background: var(--background-light, #fff);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filterSection {
+  margin-bottom: 1.5rem;
+}
+
+.filterSection h4 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.filterOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filterButton {
+  background: var(--background, #f5f7fa);
+  border: 1px solid var(--border-color, #e5e9f2);
+  color: var(--text, #4a4a4a);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterButton:hover {
+  background: var(--background-dark, #e5e9f2);
+}
+
+.filterButton.active {
+  background: var(--primary-light, #d8d5f9);
+  border-color: var(--primary, #6c5ce7);
+  color: var(--primary, #6c5ce7);
+  font-weight: 500;
+}
+
+.filterActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  color: var(--text-muted, #828282);
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  transition: color 0.2s;
+}
+
+.clearButton:hover {
+  color: var(--error, #e74c3c);
+}
+
+@media (max-width: 768px) {
+  .searchBar {
+    flex-direction: column;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .filterToggle {
+    width: 100%;
+    padding: 0.75rem;
+    justify-content: center;
+  }
+  
+  .filterSection {
+    margin-bottom: 1.25rem;
+  }
+  
+  .filterOptions {
+    gap: 6px;
+  }
+  
+  .filterButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
