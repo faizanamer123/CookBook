@@ -5,6 +5,7 @@ import { addRecipe } from '../../store/recipesSlice';
 import Button from '../../components/Button/Button';
 import styles from './CreateRecipe.module.css';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config';
 
 const CreateRecipe = () => {
   const { user } = useAuth();
@@ -248,7 +249,7 @@ const CreateRecipe = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
 
-      const response = await fetch('http://localhost:5000/api/recipes', {
+      const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

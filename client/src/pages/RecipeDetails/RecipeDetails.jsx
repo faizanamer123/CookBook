@@ -25,6 +25,10 @@ const RecipeDetails = () => {
   });
   const [checkedIngredients, setCheckedIngredients] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [commentRating, setCommentRating] = useState(5);
+  const [comments, setComments] = useState([]);
 
   useEffect(() => {
     if (!user) {
@@ -32,6 +36,21 @@ const RecipeDetails = () => {
       return;
     }
     dispatch(fetchRecipeById(id));
+    
+    // Fetch comments
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(`${API_URL}/recipes/${id}/comments`);
+        if (response.ok) {
+          const data = await response.json();
+          setComments(data);
+        }
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    };
+    
+    fetchComments();
   }, [dispatch, id, user, navigate]);
 
   useEffect(() => {
@@ -43,8 +62,18 @@ const RecipeDetails = () => {
         tags: Array.isArray(recipe.tags) ? recipe.tags.join(', ') : '',
         image: null
       });
+      
+      // Check if recipe is in user's liked recipes
+      if (user && user.likedRecipes) {
+        setIsLiked(user.likedRecipes.includes(recipe.id));
+      }
+      
+      // Check if recipe is in user's saved recipes
+      if (user && user.savedRecipes) {
+        setIsFavorite(user.savedRecipes.includes(recipe.id));
+      }
     }
-  }, [recipe]);
+  }, [recipe, user]);
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -128,21 +157,92 @@ const RecipeDetails = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/recipes/${id}/favorite`, {
+      const response = await fetch(`${API_URL}/recipes/${id}/bookmark`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle favorite');
+        throw new Error('Failed to toggle bookmark');
       }
 
       const data = await response.json();
-      setIsFavorite(data.isFavorite);
+      setIsFavorite(data.isBookmarked);
       dispatch(toggleFavorite(recipe.id));
     } catch (err) {
-      console.error('Error toggling favorite:', err);
-      alert('Failed to update favorite status');
+      console.error('Error toggling bookmark:', err);
+      alert('Failed to update bookmark status');
+    }
+  };
+  
+  const handleToggleLike = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/recipes/${id}/like`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle like');
+      }
+
+      const data = await response.json();
+      setIsLiked(data.liked);
+      
+      // Update the recipe likes count in the UI
+      if (recipe) {
+        recipe.likeCount = data.likeCount;
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      alert('Failed to update like status');
+    }
+  };
+  
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`${API_URL}/recipes/${id}/comments`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          text: commentText,
+          rating: commentRating
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add comment');
+      }
+
+      const data = await response.json();
+      setComments(prev => [...prev, data.comment]);
+      setCommentText('');
+      setCommentRating(5);
+      
+      // Update recipe's average rating
+      if (recipe) {
+        recipe.averageRating = data.averageRating;
+      }
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      alert(err.message);
     }
   };
 
@@ -180,12 +280,28 @@ const RecipeDetails = () => {
           <div className={styles.overlay}>
             <h1 className={styles.title}>{recipe.title}</h1>
             <div className={styles.meta}>
-              <div className={styles.rating}>
-                ⭐ {recipe.rating?.toFixed(1) || '0.0'}
+              <div className={styles.stats}>
+                <div className={styles.stat}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span>{recipe.viewCount || 0}</span>
+                </div>
+                <div className={styles.stat}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                  <span>{recipe.likeCount || 0}</span>
+                </div>
+                <div className={styles.stat}>
+                  <span>⭐</span>
+                  <span>{recipe.averageRating?.toFixed(1) || '0.0'}</span>
+                </div>
               </div>
               <div className={styles.author}>
                 <img
-                  src={recipe.author?.avatar || 'https://source.unsplash.com/random/100x100/?portrait'}
+                  src={recipe.author?.profilePicture || 'https://source.unsplash.com/random/100x100/?portrait'}
                   alt={recipe.author?.username}
                   className={styles.avatar}
                 />
@@ -194,10 +310,16 @@ const RecipeDetails = () => {
             </div>
             <div className={styles.actions}>
               <Button variant="outline" onClick={handleToggleFavorite}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
                 </svg>
                 {isFavorite ? 'Saved' : 'Save'}
+              </Button>
+              <Button variant="outline" onClick={handleToggleLike}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                {isLiked ? 'Liked' : 'Like'}
               </Button>
               <Button variant="outline" onClick={shareRecipe}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -248,7 +370,9 @@ const RecipeDetails = () => {
                       onChange={() => toggleIngredient(index)}
                       className={styles.checkbox}
                     />
-                    <span>{ingredient}</span>
+                    <span className={checkedIngredients.includes(index) ? styles.checked : ''}>
+                      {ingredient}
+                    </span>
                   </label>
                 </li>
               ))}
@@ -257,42 +381,113 @@ const RecipeDetails = () => {
 
           <section className={styles.instructions}>
             <h2>Instructions</h2>
-            {recipe.steps?.split('\n').map((step, index) => (
-              <div key={index} className={styles.step}>
-                <div className={styles.stepNumber}>{index + 1}</div>
-                <p>{step}</p>
-              </div>
-            ))}
+            <div className={styles.steps}>
+              {recipe.steps && recipe.steps.split('\n').map((step, index) => (
+                <div key={index} className={styles.step}>
+                  <div className={styles.stepNumber}>{index + 1}</div>
+                  <p>{step}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+          
+          <section className={styles.comments}>
+            <h2>Comments and Ratings</h2>
+            <div className={styles.commentForm}>
+              <form onSubmit={handleAddComment}>
+                <div className={styles.ratingInput}>
+                  <label>Your Rating:</label>
+                  <div className={styles.stars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setCommentRating(star)}
+                        className={styles.starButton}
+                      >
+                        <span className={commentRating >= star ? styles.filledStar : styles.emptyStar}>
+                          ★
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Share your thoughts or tips about this recipe..."
+                  required
+                  className={styles.commentTextarea}
+                />
+                <Button type="submit" variant="primary" fullWidth>
+                  Add Comment
+                </Button>
+              </form>
+            </div>
+            
+            <div className={styles.commentsList}>
+              {comments.length === 0 ? (
+                <p className={styles.noComments}>No comments yet. Be the first to comment!</p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment._id} className={styles.comment}>
+                    <div className={styles.commentHeader}>
+                      <div className={styles.commentAuthor}>
+                        <img 
+                          src={comment.author?.profilePicture || 'https://source.unsplash.com/random/100x100/?portrait'} 
+                          alt={comment.authorName} 
+                          className={styles.commentAvatar} 
+                        />
+                        <span>{comment.authorName}</span>
+                      </div>
+                      {comment.rating && (
+                        <div className={styles.commentRating}>
+                          {Array(5).fill(0).map((_, i) => (
+                            <span key={i} className={i < comment.rating ? styles.filledStar : styles.emptyStar}>★</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className={styles.commentText}>{comment.text}</p>
+                    <div className={styles.commentDate}>
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </section>
         </div>
 
-        <aside className={styles.sidebar}>
-          <div className={styles.infoCard}>
-            <h3 className={styles.infoTitle}>Recipe Info</h3>
-            <ul className={styles.infoList}>
-              <li className={styles.infoItem}>
-                <span>Prep Time:</span> {recipe.prepTime || 'N/A'}
-              </li>
-              <li className={styles.infoItem}>
-                <span>Cook Time:</span> {recipe.cookTime} mins
-              </li>
-              <li className={styles.infoItem}>
-                <span>Servings:</span> {recipe.servings || 'N/A'}
-              </li>
-              <li className={styles.infoItem}>
-                <span>Difficulty:</span> {recipe.difficulty || 'N/A'}
-              </li>
-            </ul>
+        <div className={styles.sidebar}>
+          <div className={styles.recipeInfo}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Cook Time</span>
+              <span className={styles.infoValue}>{recipe.cookTime} min</span>
+            </div>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Servings</span>
+              <span className={styles.infoValue}>{recipe.servings}</span>
+            </div>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Difficulty</span>
+              <span className={styles.infoValue}>{recipe.difficulty}</span>
+            </div>
           </div>
 
-          <div className={styles.tags}>
-            {Array.isArray(recipe.tags) && recipe.tags.map(tag => (
-              <span key={tag} className={styles.tag}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        </aside>
+          {recipe.tags && recipe.tags.length > 0 && (
+            <div className={styles.tags}>
+              <h3>Tags</h3>
+              <div className={styles.tagsList}>
+                {recipe.tags.map((tag, index) => (
+                  <span key={index} className={styles.tag}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {editMode && (
