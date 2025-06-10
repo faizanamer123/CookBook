@@ -21,41 +21,30 @@ router.get('/', asyncHandler(async (req, res) => {
 // Get single recipe by ID
 router.get('/:id', asyncHandler(async (req, res) => {
   try {
-    const recipe = await Recipe.findById(req.params.id)
-      .populate('author', 'username email profilePicture')
-      .lean();
-
+    const recipeId = req.params.id;
+    console.log(`Fetching recipe with ID: ${recipeId}`);
+    
+    // Validate the ID format
+    if (!mongoose.Types.ObjectId.isValid(recipeId)) {
+      console.error(`Invalid recipe ID format: ${recipeId}`);
+      return res.status(400).json({ message: 'Invalid recipe ID format' });
+    }
+    
+    const recipe = await Recipe.findById(recipeId)
+      .populate('author', 'username profilePicture');
+    
     if (!recipe) {
+      console.error(`Recipe not found with ID: ${recipeId}`);
       return res.status(404).json({ message: 'Recipe not found' });
     }
-
-    // Increment view count
-    await Recipe.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } });
-    recipe.viewCount = (recipe.viewCount || 0) + 1;
-
-    // Format the response
-    const responseRecipe = {
-      ...recipe,
-      id: recipe._id.toString(),
-      _id: recipe._id.toString(),
-      author: {
-        id: recipe.author._id.toString(),
-        username: recipe.author.username,
-        email: recipe.author.email,
-        profilePicture: recipe.author.profilePicture
-      },
-      likeCount: recipe.likes ? recipe.likes.length : 0,
-      averageRating: recipe.averageRating || 0,
-      comments: recipe.comments || [],
-      createdAt: recipe.createdAt ? recipe.createdAt.toISOString() : new Date().toISOString(),
-      updatedAt: recipe.updatedAt ? recipe.updatedAt.toISOString() : new Date().toISOString()
-    };
-
-    // Ensure we're sending a proper JSON response
-    res.setHeader('Content-Type', 'application/json');
-    return res.json(responseRecipe);
+    
+    console.log(`Successfully found recipe: ${recipe.title}`);
+    res.json(recipe);
   } catch (error) {
     console.error('Error fetching recipe:', error);
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
 }));
@@ -64,37 +53,56 @@ router.get('/:id', asyncHandler(async (req, res) => {
 router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => {
   console.log('Received recipe creation request');
   try {
-    const { title, description, ingredients, steps, tags, cookTime, servings, difficulty } = req.body;
+    const { title, description, ingredients, instructions, tags, cookTime, servings, difficulty } = req.body;
     
     // Validate required fields
-    if (!title || !description || !ingredients || !steps || !tags || !cookTime || !servings || !difficulty) {
+    if (!title || !description || !ingredients || !instructions || !tags || !cookTime || !servings || !difficulty) {
       console.log('Missing required fields');
       return res.status(400).json({ 
         message: 'All fields are required',
-        missing: Object.entries({ title, description, ingredients, steps, tags, cookTime, servings, difficulty })
+        missing: Object.entries({ title, description, ingredients, instructions, tags, cookTime, servings, difficulty })
           .filter(([_, value]) => !value)
           .map(([key]) => key)
       });
     }
 
     // Parse JSON fields
-    let parsedIngredients, parsedTags;
+    let parsedIngredients, parsedTags, parsedInstructions;
     try {
       parsedIngredients = JSON.parse(ingredients);
       parsedTags = JSON.parse(tags);
+      parsedInstructions = JSON.parse(instructions);
     } catch (error) {
       console.error('JSON parse error:', error);
-      return res.status(400).json({ message: 'Invalid ingredients or tags format' });
+      return res.status(400).json({ message: 'Invalid ingredients, instructions, or tags format' });
     }
 
     // Validate parsed data
-    if (!Array.isArray(parsedIngredients) || !Array.isArray(parsedTags)) {
-      return res.status(400).json({ message: 'Ingredients and tags must be arrays' });
+    if (!Array.isArray(parsedIngredients) || !Array.isArray(parsedTags) || !Array.isArray(parsedInstructions)) {
+      return res.status(400).json({ message: 'Ingredients, instructions, and tags must be arrays' });
     }
 
     if (parsedIngredients.length === 0) {
       return res.status(400).json({ message: 'At least one ingredient is required' });
     }
+
+    // Ensure ingredients have the right format (objects with name, amount, unit)
+    parsedIngredients = parsedIngredients.map(ingredient => {
+      if (typeof ingredient === 'string') {
+        // Convert string ingredients to object format
+        const parts = ingredient.trim().split(' ');
+        return {
+          name: parts.slice(2).join(' ') || ingredient,
+          amount: parts[0] || '1',
+          unit: parts[1] || ''
+        };
+      }
+      return {
+        name: ingredient.name || '',
+        amount: ingredient.amount || '1',
+        unit: ingredient.unit || ''
+      };
+    });
 
     let imageUrl = '';
     if (req.file) {
@@ -127,16 +135,14 @@ router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => 
     const recipe = new Recipe({
       title: title.trim(),
       description: description.trim(),
-      ingredients: parsedIngredients.map(i => i.trim()),
-      steps: steps.trim(),
-      tags: parsedTags.map(t => t.trim()),
-      imageUrl,
+      ingredients: parsedIngredients,
+      instructions: parsedInstructions,
+      image: imageUrl,
       cookTime: parseInt(cookTime),
       servings: parseInt(servings),
       difficulty,
       author: req.user._id,
-      viewCount: 0,
-      likes: []
+      cuisineType: 'Other'
     });
 
     const savedRecipe = await recipe.save();

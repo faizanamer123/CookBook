@@ -3,45 +3,56 @@ const mongoose = require('mongoose');
 const recipeSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
-  ingredients: [{ type: String, required: true }],
-  steps: { type: String, required: true },
-  tags: [{ type: String }],
-  imageUrl: { type: String },
-  cookTime: { type: Number },
-  servings: { type: Number },
-  difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'] },
+  ingredients: [{ 
+    name: { type: String, required: true },
+    amount: { type: String, required: true },
+    unit: { type: String }
+  }],
+  instructions: [{ type: String, required: true }],
+  image: { type: String },
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  viewCount: { type: Number, default: 0 },
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  cookTime: { type: Number, default: 0 },
+  servings: { type: Number, default: 1 },
+  difficulty: { 
+    type: String, 
+    enum: ['Easy', 'Medium', 'Hard', 'Expert'],
+    default: 'Medium'
+  },
+  cuisineType: { 
+    type: String, 
+    enum: ['Italian', 'Mexican', 'Chinese', 'Indian', 'Japanese', 'Thai', 'Mediterranean', 'French', 'American', 'Middle Eastern', 'Other'],
+    default: 'Other'
+  },
+  dietaryRestrictions: [{ type: String }],
+  tags: [{ type: String }],
+  likes: { type: Number, default: 0 },
   comments: [{
-    _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    authorName: { type: String, required: true },
-    text: { type: String, required: true },
+    content: { type: String, required: true },
     rating: { type: Number, min: 1, max: 5 },
     createdAt: { type: Date, default: Date.now }
   }]
-}, { 
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+}, { timestamps: true });
 
-// Virtual property for like count
-recipeSchema.virtual('likeCount').get(function() {
-  return this.likes.length;
-});
+// Add indexes for search performance
+recipeSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
-// Virtual property for average rating
-recipeSchema.virtual('averageRating').get(function() {
-  if (this.comments.length === 0) return 0;
-  
-  const ratingSum = this.comments.reduce((sum, comment) => {
-    return sum + (comment.rating || 0);
-  }, 0);
+// Calculate average rating
+recipeSchema.methods.getAverageRating = function() {
+  if (this.comments.length === 0) {
+    return 0;
+  }
   
   const commentCount = this.comments.filter(comment => comment.rating).length;
-  return commentCount > 0 ? ratingSum / commentCount : 0;
-});
+  if (commentCount === 0) {
+    return 0;
+  }
+  
+  const sum = this.comments.reduce((total, comment) => {
+    return total + (comment.rating || 0);
+  }, 0);
+  
+  return sum / commentCount;
+};
 
 module.exports = mongoose.model('Recipe', recipeSchema); 

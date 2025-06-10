@@ -3,12 +3,14 @@ import { useSelector } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import RecipeCard from '../../components/RecipeCard/RecipeCard';
 import Button from '../../components/Button/Button';
+import ImageCropper from '../../components/ImageCropper/ImageCropper';
 import styles from './UserDashboard.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { FaCamera, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 
 const UserDashboard = () => {
-  const { user, updateProfile, updatePassword } = useAuth();
+  const { user, updateProfile, updatePassword, uploadProfilePicture } = useAuth();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
 
@@ -19,7 +21,7 @@ const UserDashboard = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [profileFormData, setProfileFormData] = useState({
-    name: user?.name || '',
+    username: user?.username || '',
     bio: user?.bio || '',
     dietaryPreferences: user?.dietaryPreferences || [],
     cookingSkillLevel: user?.cookingSkillLevel || 'Beginner',
@@ -43,11 +45,20 @@ const UserDashboard = () => {
   const [passwordMessage, setPasswordMessage] = useState(null);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [picturePreview, setPicturePreview] = useState(user?.profilePicture || null);
+  const [pictureError, setPictureError] = useState(null);
+  
+  // Image cropping state
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!user) navigate('/login');
     setProfileFormData({
-      name: user?.name || '',
+      username: user?.username || '',
       bio: user?.bio || '',
       dietaryPreferences: user?.dietaryPreferences || [],
       cookingSkillLevel: user?.cookingSkillLevel || 'Beginner',
@@ -60,6 +71,7 @@ const UserDashboard = () => {
         youtube: ''
       }
     });
+    setPicturePreview(user?.profilePicture || null);
   }, [user, navigate]);
 
   const handleProfileInputChange = (e) => {
@@ -70,10 +82,110 @@ const UserDashboard = () => {
     }));
   };
 
+  const handleDietaryPreferenceChange = (e) => {
+    const { value, checked } = e.target;
+    setProfileFormData(prev => ({
+      ...prev,
+      dietaryPreferences: checked 
+        ? [...prev.dietaryPreferences, value]
+        : prev.dietaryPreferences.filter(pref => pref !== value)
+    }));
+  };
+
+  const handleCuisineChange = (e) => {
+    const { value, checked } = e.target;
+    setProfileFormData(prev => ({
+      ...prev,
+      favoriteCuisines: checked 
+        ? [...prev.favoriteCuisines, value]
+        : prev.favoriteCuisines.filter(cuisine => cuisine !== value)
+    }));
+  };
+
+  const handleSocialMediaChange = (e) => {
+    const { name, value } = e.target;
+    setProfileFormData(prev => ({
+      ...prev,
+      socialMediaLinks: {
+        ...prev.socialMediaLinks,
+        [name]: value
+      }
+    }));
+  };
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.match('image.*')) {
+      setPictureError('Please select an image file (jpg, png, etc.)');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setPictureError('Image size must be less than 5MB');
+      return;
+    }
+    
+    // Clear any previous errors
+    setPictureError(null);
+    
+    // Create object URL for the cropper
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setShowCropper(true);
+  };
+
+  const handleCropComplete = async (croppedImageBlob) => {
+    setProfilePicture(croppedImageBlob);
+    setPicturePreview(URL.createObjectURL(croppedImageBlob));
+    setShowCropper(false);
+    
+    // Upload the cropped image immediately
+    await handleUploadProfilePicture(croppedImageBlob);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+    }
+  };
+
+  const handleUploadProfilePicture = async (imageBlob = null) => {
+    const imageToUpload = imageBlob || profilePicture;
+    
+    if (!imageToUpload) {
+      setPictureError('Please select an image to upload');
+      return;
+    }
+    
+    setUploadingPicture(true);
+    setPictureError(null);
+    
+    try {
+      const result = await uploadProfilePicture(imageToUpload);
+      if (result.success) {
+        setPicturePreview(result.profilePicture);
+        setProfileMessage({ type: 'success', text: 'Profile picture updated successfully!' });
+        setProfilePicture(null); // Clear the file input
+      } else {
+        setPictureError(result.error || 'Failed to upload profile picture');
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      setPictureError('An unexpected error occurred');
+    } finally {
+      setUploadingPicture(false);
+    }
+  };
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    if (!profileFormData.name.trim()) {
-      setProfileErrors({ name: 'Name is required' });
+    if (!profileFormData.username.trim()) {
+      setProfileErrors({ username: 'Username is required' });
       return;
     }
     setProfileErrors({});
@@ -81,7 +193,7 @@ const UserDashboard = () => {
     setProfileMessage(null);
     try {
       const result = await updateProfile({
-        username: profileFormData.name,
+        username: profileFormData.username,
         bio: profileFormData.bio,
         dietaryPreferences: profileFormData.dietaryPreferences,
         cookingSkillLevel: profileFormData.cookingSkillLevel,
@@ -92,24 +204,6 @@ const UserDashboard = () => {
       if (result.success) {
         setProfileMessage({ type: 'success', text: 'Profile updated successfully!' });
         setIsEditingProfile(false);
-        
-        const updatedUser = JSON.parse(localStorage.getItem('user'));
-        if (updatedUser) {
-          setProfileFormData({
-            name: updatedUser.username || updatedUser.name || '',
-            bio: updatedUser.bio || '',
-            dietaryPreferences: updatedUser.dietaryPreferences || [],
-            cookingSkillLevel: updatedUser.cookingSkillLevel || 'Beginner',
-            favoriteCuisines: updatedUser.favoriteCuisines || [],
-            socialMediaLinks: updatedUser.socialMediaLinks || {
-              facebook: '',
-              twitter: '',
-              instagram: '',
-              pinterest: '',
-              youtube: ''
-            }
-          });
-        }
       } else {
         setProfileMessage({ type: 'error', text: result.error || 'Failed to update profile.' });
       }
@@ -179,26 +273,68 @@ const UserDashboard = () => {
     <div className={styles.dashboardContainer}>
       <h1 className={styles.pageTitle}>User Dashboard</h1>
 
+      {showCropper && imageToCrop ? (
+        <div className={styles.cropperModal}>
+          <div className={styles.cropperOverlay} onClick={handleCropCancel}></div>
+          <div className={styles.cropperContent}>
+            <h3 className={styles.cropperTitle}>Crop Profile Picture</h3>
+            <ImageCropper 
+              imageSrc={imageToCrop} 
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+            />
+          </div>
+        </div>
+      ) : null}
+
       <section className={styles.profileSection}>
         <h2 className={styles.sectionTitle}>Profile Information</h2>
         <div className={styles.profileInfo}>
-          <div className={styles.avatar} style={{
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            background: isDarkMode ? '#fff' : 'var(--primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 36,
-            color: isDarkMode ? 'var(--primary)' : '#fff',
-            fontWeight: 700,
-            border: isDarkMode ? '2px solid var(--primary)' : 'none'
-          }}>
-            {getInitials(profileFormData.name || user.name)}
+          <div className={styles.profileImageContainer}>
+            <div className={styles.profilePictureWrapper}>
+              {picturePreview ? (
+                <img 
+                  src={picturePreview} 
+                  alt={user.username || 'Profile'} 
+                  className={styles.profileImage}
+                />
+              ) : (
+                <div className={styles.avatar} style={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: '50%',
+                  background: isDarkMode ? '#fff' : 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 48,
+                  color: isDarkMode ? 'var(--primary)' : '#fff',
+                  fontWeight: 700,
+                  border: isDarkMode ? '2px solid var(--primary)' : 'none'
+                }}>
+                  {getInitials(user.username)}
+                </div>
+              )}
+              
+              <label htmlFor="profile-picture" className={styles.pictureEditButton}>
+                <FaCamera />
+              </label>
+            </div>
+            
+            <div className={styles.profilePictureUpload}>
+              <input
+                type="file"
+                id="profile-picture"
+                onChange={handleProfilePictureChange}
+                accept="image/*"
+                className={styles.fileInput}
+              />
+              {pictureError && <p className={styles.errorText}>{pictureError}</p>}
+            </div>
           </div>
+          
           <div className={styles.userInfo}>
-            <p><strong>Name:</strong> {user.name}</p>
+            <p><strong>Name:</strong> {user.username}</p>
             <p><strong>Email:</strong> {user.email}</p>
             {user.bio && <p><strong>Bio:</strong> {user.bio}</p>}
             <p><strong>Cooking Skill Level:</strong> {user.cookingSkillLevel || 'Beginner'}</p>
@@ -270,52 +406,60 @@ const UserDashboard = () => {
                 </div>
               </div>
             )}
+            
+            <div className={styles.editButtons}>
+              <Button onClick={() => setIsEditingProfile(true)} variant="outline">
+                <FaEdit /> Edit Profile
+              </Button>
+              <Button onClick={() => setIsEditingPassword(true)} variant="outline">
+                Edit Password
+              </Button>
+            </div>
+
+            {profileMessage && (
+              <div className={`${styles.message} ${styles[profileMessage.type]}`}>
+                {profileMessage.text}
+              </div>
+            )}
           </div>
-          {!isEditingProfile && (
-            <Button variant="outline" onClick={() => setIsEditingProfile(true)} className={styles.editButton}>
-              Edit Profile
-            </Button>
-          )}
         </div>
 
         {isEditingProfile && (
-          <form onSubmit={handleProfileSubmit} className={styles.profileForm}>
-            <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>Name:</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={profileFormData.name}
-                onChange={handleProfileInputChange}
-                className={`${styles.input} ${profileErrors.name ? styles.inputError : ''}`}
-                disabled={isProfileLoading}
-              />
-              {profileErrors.name && <span className={styles.error}>{profileErrors.name}</span>}
-            </div>
+          <form className={styles.editForm} onSubmit={handleProfileSubmit}>
+            <h3>Edit Profile</h3>
             
             <div className={styles.formGroup}>
-              <label htmlFor="bio" className={styles.label}>Bio:</label>
+              <label htmlFor="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={profileFormData.username}
+                onChange={handleProfileInputChange}
+                className={styles.input}
+              />
+              {profileErrors.username && <span className={styles.errorText}>{profileErrors.username}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="bio">Bio</label>
               <textarea
                 id="bio"
                 name="bio"
                 value={profileFormData.bio}
                 onChange={handleProfileInputChange}
                 className={styles.textarea}
-                disabled={isProfileLoading}
                 placeholder="Tell us about yourself..."
-                rows={4}
               />
             </div>
-            
+
             <div className={styles.formGroup}>
-              <label className={styles.label}>Cooking Skill Level:</label>
+              <label>Cooking Skill Level</label>
               <select
                 name="cookingSkillLevel"
                 value={profileFormData.cookingSkillLevel}
                 onChange={handleProfileInputChange}
                 className={styles.select}
-                disabled={isProfileLoading}
               >
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
@@ -323,28 +467,18 @@ const UserDashboard = () => {
                 <option value="Professional">Professional</option>
               </select>
             </div>
-            
+
             <div className={styles.formGroup}>
-              <label className={styles.label}>Dietary Preferences:</label>
+              <label>Dietary Preferences</label>
               <div className={styles.checkboxGroup}>
                 {['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo', 'Low-Carb', 'Low-Fat'].map(preference => (
                   <label key={preference} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
-                      name="dietaryPreferences"
                       value={preference}
                       checked={profileFormData.dietaryPreferences.includes(preference)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setProfileFormData(prev => ({
-                          ...prev,
-                          dietaryPreferences: e.target.checked
-                            ? [...prev.dietaryPreferences, value]
-                            : prev.dietaryPreferences.filter(item => item !== value)
-                        }));
-                      }}
+                      onChange={handleDietaryPreferenceChange}
                       className={styles.checkbox}
-                      disabled={isProfileLoading}
                     />
                     {preference}
                   </label>
@@ -353,26 +487,16 @@ const UserDashboard = () => {
             </div>
             
             <div className={styles.formGroup}>
-              <label className={styles.label}>Favorite Cuisines:</label>
+              <label>Favorite Cuisines</label>
               <div className={styles.checkboxGroup}>
                 {['Italian', 'Mexican', 'Chinese', 'Indian', 'Japanese', 'Thai', 'Mediterranean', 'French', 'American', 'Middle Eastern'].map(cuisine => (
                   <label key={cuisine} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
-                      name="favoriteCuisines"
                       value={cuisine}
                       checked={profileFormData.favoriteCuisines.includes(cuisine)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setProfileFormData(prev => ({
-                          ...prev,
-                          favoriteCuisines: e.target.checked
-                            ? [...prev.favoriteCuisines, value]
-                            : prev.favoriteCuisines.filter(item => item !== value)
-                        }));
-                      }}
+                      onChange={handleCuisineChange}
                       className={styles.checkbox}
-                      disabled={isProfileLoading}
                     />
                     {cuisine}
                   </label>
@@ -381,198 +505,141 @@ const UserDashboard = () => {
             </div>
             
             <div className={styles.formGroup}>
-              <label className={styles.label}>Social Media Links:</label>
+              <label>Social Media Links</label>
               <div className={styles.socialLinks}>
                 <div className={styles.socialLinkField}>
-                  <label htmlFor="facebook" className={styles.socialLabel}>Facebook:</label>
+                  <label htmlFor="facebook">Facebook</label>
                   <input
                     type="text"
                     id="facebook"
-                    name="socialMediaLinks.facebook"
+                    name="facebook"
                     value={profileFormData.socialMediaLinks.facebook}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({
-                        ...prev,
-                        socialMediaLinks: {
-                          ...prev.socialMediaLinks,
-                          facebook: e.target.value
-                        }
-                      }));
-                    }}
+                    onChange={handleSocialMediaChange}
                     className={styles.input}
-                    disabled={isProfileLoading}
                     placeholder="https://facebook.com/yourusername"
                   />
                 </div>
                 
                 <div className={styles.socialLinkField}>
-                  <label htmlFor="twitter" className={styles.socialLabel}>Twitter:</label>
+                  <label htmlFor="twitter">Twitter</label>
                   <input
                     type="text"
                     id="twitter"
-                    name="socialMediaLinks.twitter"
+                    name="twitter"
                     value={profileFormData.socialMediaLinks.twitter}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({
-                        ...prev,
-                        socialMediaLinks: {
-                          ...prev.socialMediaLinks,
-                          twitter: e.target.value
-                        }
-                      }));
-                    }}
+                    onChange={handleSocialMediaChange}
                     className={styles.input}
-                    disabled={isProfileLoading}
                     placeholder="https://twitter.com/yourusername"
                   />
                 </div>
                 
                 <div className={styles.socialLinkField}>
-                  <label htmlFor="instagram" className={styles.socialLabel}>Instagram:</label>
+                  <label htmlFor="instagram">Instagram</label>
                   <input
                     type="text"
                     id="instagram"
-                    name="socialMediaLinks.instagram"
+                    name="instagram"
                     value={profileFormData.socialMediaLinks.instagram}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({
-                        ...prev,
-                        socialMediaLinks: {
-                          ...prev.socialMediaLinks,
-                          instagram: e.target.value
-                        }
-                      }));
-                    }}
+                    onChange={handleSocialMediaChange}
                     className={styles.input}
-                    disabled={isProfileLoading}
                     placeholder="https://instagram.com/yourusername"
                   />
                 </div>
                 
                 <div className={styles.socialLinkField}>
-                  <label htmlFor="pinterest" className={styles.socialLabel}>Pinterest:</label>
+                  <label htmlFor="pinterest">Pinterest</label>
                   <input
                     type="text"
                     id="pinterest"
-                    name="socialMediaLinks.pinterest"
+                    name="pinterest"
                     value={profileFormData.socialMediaLinks.pinterest}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({
-                        ...prev,
-                        socialMediaLinks: {
-                          ...prev.socialMediaLinks,
-                          pinterest: e.target.value
-                        }
-                      }));
-                    }}
+                    onChange={handleSocialMediaChange}
                     className={styles.input}
-                    disabled={isProfileLoading}
                     placeholder="https://pinterest.com/yourusername"
                   />
                 </div>
                 
                 <div className={styles.socialLinkField}>
-                  <label htmlFor="youtube" className={styles.socialLabel}>YouTube:</label>
+                  <label htmlFor="youtube">YouTube</label>
                   <input
                     type="text"
                     id="youtube"
-                    name="socialMediaLinks.youtube"
+                    name="youtube"
                     value={profileFormData.socialMediaLinks.youtube}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({
-                        ...prev,
-                        socialMediaLinks: {
-                          ...prev.socialMediaLinks,
-                          youtube: e.target.value
-                        }
-                      }));
-                    }}
+                    onChange={handleSocialMediaChange}
                     className={styles.input}
-                    disabled={isProfileLoading}
                     placeholder="https://youtube.com/channel/yourchannel"
                   />
                 </div>
               </div>
             </div>
             
-            {profileMessage && (
-              <div className={`${styles.message} ${profileMessage.type === 'success' ? styles.success : styles.error}`}>
-                {profileMessage.text}
-              </div>
-            )}
             <div className={styles.formActions}>
-              <Button type="submit" variant="primary" disabled={isProfileLoading} loading={isProfileLoading}>
-                Save Changes
+              <Button type="submit" variant="primary" disabled={isProfileLoading}>
+                {isProfileLoading ? 'Saving...' : 'Save Changes'}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => setIsEditingProfile(false)} disabled={isProfileLoading}>
+              <Button type="button" variant="outline" onClick={() => setIsEditingProfile(false)}>
                 Cancel
               </Button>
             </div>
           </form>
         )}
-      </section>
 
-      <section className={styles.profileSection}>
-        <h2 className={styles.sectionTitle}>Update Password</h2>
-        {!isEditingPassword ? (
-          <Button variant="outline" onClick={() => setIsEditingPassword(true)} className={styles.editButton}>
-            Change Password
-          </Button>
-        ) : (
-          <form onSubmit={handlePasswordSubmit} className={styles.passwordForm}>
-            {passwordErrors.submit && (
-              <div className={styles.errorMessage}>
-                {passwordErrors.submit}
-              </div>
-            )}
+        {isEditingPassword && (
+          <form className={styles.editForm} onSubmit={handlePasswordSubmit}>
+            <h3>Change Password</h3>
+            
             <div className={styles.formGroup}>
-              <label htmlFor="current-password" className={styles.label}>Current Password:</label>
+              <label htmlFor="currentPassword">Current Password</label>
               <input
                 type="password"
-                id="current-password"
+                id="currentPassword"
                 name="currentPassword"
                 value={passwordFormData.currentPassword}
                 onChange={handlePasswordInputChange}
-                className={`${styles.input}`}
-                disabled={isPasswordLoading}
+                className={styles.input}
               />
             </div>
+
             <div className={styles.formGroup}>
-              <label htmlFor="new-password" className={styles.label}>New Password:</label>
+              <label htmlFor="newPassword">New Password</label>
               <input
                 type="password"
-                id="new-password"
+                id="newPassword"
                 name="newPassword"
                 value={passwordFormData.newPassword}
                 onChange={handlePasswordInputChange}
-                className={`${styles.input} ${passwordErrors.newPassword ? styles.inputError : ''}`}
-                disabled={isPasswordLoading}
+                className={styles.input}
               />
-              {passwordErrors.newPassword && <span className={styles.error}>{passwordErrors.newPassword}</span>}
+              {passwordErrors.newPassword && <span className={styles.errorText}>{passwordErrors.newPassword}</span>}
             </div>
+
             <div className={styles.formGroup}>
-              <label htmlFor="confirm-new-password" className={styles.label}>Confirm New Password:</label>
+              <label htmlFor="confirmNewPassword">Confirm New Password</label>
               <input
                 type="password"
-                id="confirm-new-password"
+                id="confirmNewPassword"
                 name="confirmNewPassword"
                 value={passwordFormData.confirmNewPassword}
                 onChange={handlePasswordInputChange}
-                className={`${styles.input} ${passwordErrors.confirmNewPassword ? styles.inputError : ''}`}
-                disabled={isPasswordLoading}
+                className={styles.input}
               />
-              {passwordErrors.confirmNewPassword && <span className={styles.error}>{passwordErrors.confirmNewPassword}</span>}
+              {passwordErrors.confirmNewPassword && <span className={styles.errorText}>{passwordErrors.confirmNewPassword}</span>}
             </div>
+            
+            {passwordErrors.submit && <div className={styles.errorText}>{passwordErrors.submit}</div>}
+            
             {passwordMessage && (
-              <div className={`${styles.message} ${passwordMessage.type === 'success' ? styles.success : styles.error}`}>
+              <div className={`${styles.message} ${styles[passwordMessage.type]}`}>
                 {passwordMessage.text}
               </div>
             )}
+            
             <div className={styles.formActions}>
-              <Button type="submit" variant="primary" disabled={isPasswordLoading} loading={isPasswordLoading}>
-                Update Password
+              <Button type="submit" variant="primary" disabled={isPasswordLoading}>
+                {isPasswordLoading ? 'Updating...' : 'Update Password'}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => setIsEditingPassword(false)} disabled={isPasswordLoading}>
+              <Button type="button" variant="outline" onClick={() => setIsEditingPassword(false)}>
                 Cancel
               </Button>
             </div>
@@ -581,16 +648,16 @@ const UserDashboard = () => {
       </section>
 
       {/* Saved Recipes Section */}
-      <section className={styles.profileSection}>
-        <h2 className={styles.sectionTitle}>Saved Recipes</h2>
-        {favoriteRecipes.length === 0 ? (
-          <p>You have no favorite recipes yet.</p>
-        ) : (
+      <section className={styles.recipesSection}>
+        <h2 className={styles.sectionTitle}>Your Saved Recipes</h2>
+        {favoriteRecipes.length > 0 ? (
           <div className={styles.recipesGrid}>
             {favoriteRecipes.map(recipe => (
-              <RecipeCard key={recipe.id} {...recipe} isFavorite />
+              <RecipeCard key={recipe.id} {...recipe} />
             ))}
           </div>
+        ) : (
+          <p className={styles.noRecipes}>You haven't saved any recipes yet.</p>
         )}
       </section>
     </div>

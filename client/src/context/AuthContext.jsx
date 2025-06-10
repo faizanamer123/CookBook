@@ -98,6 +98,7 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Updating profile with data:', profileData);
       
+      // Using fetch instead of axios for consistency
       const response = await fetch(`${API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
@@ -109,27 +110,18 @@ export const AuthProvider = ({ children }) => {
 
       // First check if the response is OK
       if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
+        // Try to get a more specific error message
+        try {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to update profile');
-        } else {
-          // If response isn't JSON, get the text
-          const errorText = await response.text();
-          console.error('Non-JSON error response:', errorText);
-          throw new Error('Server returned an invalid response');
+          throw new Error(errorData.message || `Failed to update profile (${response.status})`);
+        } catch (parseError) {
+          // If we can't parse the error JSON
+          throw new Error(`Server error ${response.status}: Could not update profile`);
         }
       }
 
       // Try to parse the JSON response
-      let data;
-      try {
-        const textResponse = await response.text();
-        data = JSON.parse(textResponse);
-      } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-        throw new Error('Invalid JSON response from server');
-      }
+      const data = await response.json();
       
       // Update the user state with the new profile data
       const updatedUser = { ...user, ...data };
@@ -142,6 +134,44 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error('Profile update error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const uploadProfilePicture = async (imageFile) => {
+    try {
+      if (!token) throw new Error('No authentication token found');
+      if (!imageFile) throw new Error('No image file provided');
+      
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      
+      const response = await fetch(`${API_URL}/auth/profile-picture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload profile picture');
+      }
+      
+      const data = await response.json();
+      
+      // Update user with new profile picture URL
+      const updatedUser = { ...user, profilePicture: data.profilePicture };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Dispatch event to notify components of user change
+      window.dispatchEvent(new Event('userChanged'));
+      
+      return { success: true, profilePicture: data.profilePicture };
+    } catch (error) {
+      console.error('Profile picture upload error:', error);
       return { success: false, error: error.message };
     }
   };
@@ -182,7 +212,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
-    updatePassword
+    updatePassword,
+    uploadProfilePicture
   };
 
   return (

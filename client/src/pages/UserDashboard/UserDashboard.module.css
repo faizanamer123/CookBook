@@ -53,9 +53,99 @@
   }
 }
 
+.profileImageContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.profilePictureWrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.profileImage {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pictureEditButton {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background-color: var(--primary);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  transition: all 0.2s ease;
+}
+
+.pictureEditButton:hover {
+  transform: scale(1.1);
+  background-color: var(--primary-dark, #0056b3);
+}
+
 .avatar {
   margin-bottom: 1.5rem;
   position: relative;
+}
+
+.profilePictureUpload {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.fileInput {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.fileInputLabel {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: var(--background);
+  color: var(--text);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: center;
+  transition: all 0.2s;
+  width: 100%;
+  max-width: 200px;
+}
+
+.fileInputLabel:hover {
+  background-color: var(--background-alt);
+}
+
+.errorText {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
 }
 
 .userInfo {
@@ -77,14 +167,11 @@
   line-height: 1.5;
 }
 
-.editButton {
-  align-self: center;
-}
-
-@media (min-width: 768px) {
-  .editButton {
-    align-self: flex-start;
-  }
+.editButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .tagsList {
@@ -106,16 +193,28 @@
   display: inline-block;
 }
 
-.profileForm {
+.editForm {
   max-width: 800px;
-  margin: 0 auto;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--background);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.editForm h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .formGroup {
   margin-bottom: 1.5rem;
 }
 
-.label {
+.formGroup label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
@@ -175,17 +274,11 @@
     flex-direction: row;
     align-items: center;
   }
-}
-
-.socialLabel {
-  min-width: 100px;
-  margin-bottom: 0.5rem;
-}
-
-@media (min-width: 768px) {
-  .socialLabel {
-    margin-bottom: 0;
+  
+  .socialLinkField label {
+    width: 100px;
     margin-right: 1rem;
+    margin-bottom: 0;
   }
 }
 
@@ -208,7 +301,7 @@
 .message {
   padding: 1rem;
   border-radius: 6px;
-  margin-bottom: 1.5rem;
+  margin: 1rem 0;
 }
 
 .success {
@@ -225,6 +318,55 @@
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: flex-end;
+}
+
+/* Image Cropper Modal */
+.cropperModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cropperOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.cropperContent {
+  position: relative;
+  background-color: var(--background);
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 550px;
+  z-index: 1001;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.cropperTitle {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+
+.recipesSection {
+  background: var(--background-light);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .recipesGrid {
@@ -232,6 +374,13 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
   margin-top: 1.5rem;
+}
+
+.noRecipes {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-light);
+  font-style: italic;
 }
 
 .notLoggedIn {
@@ -248,31 +397,21 @@
   .pageTitle {
     font-size: 2rem;
   }
-
-  .profileInfo {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 1rem;
-  }
-
-  .userInfo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .editButton {
-    align-self: stretch;
+  
+  .profileImageContainer {
     width: 100%;
   }
-
+  
+  .cropperContent {
+    width: 95%;
+    padding: 1rem;
+  }
+  
   .formActions {
     flex-direction: column;
   }
-
-  .recipesGrid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
+  
+  .formActions button {
+    width: 100%;
   }
 } 
