@@ -44,6 +44,18 @@
   color: white;
 }
 
+.danger {
+  background-color: #dc3545;
+  color: white;
+  box-shadow: var(--box-shadow);
+}
+
+.danger:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-hover);
+}
+
 .icon {
   padding: 0.5rem;
   min-width: auto;
