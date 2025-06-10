@@ -33,7 +33,9 @@
 
 .title {
   font-size: 2.5rem;
+  font-weight: 700;
   margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .meta {
@@ -44,13 +46,19 @@
 }
 
 .rating {
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .author {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .avatar {
@@ -58,11 +66,64 @@
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid white;
 }
 
 .actions {
   display: flex;
   gap: 1rem;
+  margin-top: 1rem;
+}
+
+.actions button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.actions button svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.actions button:hover {
+  transform: translateY(-2px);
+}
+
+.actions button.danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.actions button.danger:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+}
+
+/* Ensure text is visible in both light and dark modes */
+.overlay * {
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Add a semi-transparent overlay to ensure text visibility */
+.banner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, 
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.6)
+  );
+  pointer-events: none;
 }
 
 .content {
