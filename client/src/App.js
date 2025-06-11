@@ -14,6 +14,9 @@ const Login = lazy(() => import('./pages/Login/Login'));
 const Register = lazy(() => import('./pages/Register/Register'));
 const RecipeDetails = lazy(() => import('./pages/RecipeDetails/RecipeDetails'));
 const UserProfile = lazy(() => import('./pages/UserProfile/UserProfile'));
+const GoogleCallback = lazy(() => import('./pages/GoogleCallback'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +56,9 @@ function AppRoutes() {
                 <Register />
               </PublicRoute>
             } />
+            <Route path="/auth/google/callback" element={<GoogleCallback />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             {/* Protected routes */}
             <Route path="/" element={
