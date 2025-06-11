@@ -39,7 +39,12 @@ export const fetchRecipes = createAsyncThunk(
         rating: recipe.rating || 0,
         cookTime: recipe.cookTime || 0,
         tags: Array.isArray(recipe.tags) ? recipe.tags : [],
-        author: recipe.author || { username: 'Unknown' }
+        author: recipe.author 
+          ? {
+              ...recipe.author,
+              id: recipe.author._id || recipe.author.id
+            }
+          : { username: 'Unknown' }
       }));
     } catch (error) {
       return rejectWithValue(error.message);
@@ -82,7 +87,12 @@ export const fetchRecipeById = createAsyncThunk(
         ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
         steps: data.steps || '',
         tags: Array.isArray(data.tags) ? data.tags : [],
-        author: data.author || { username: 'Unknown' },
+        author: data.author
+          ? {
+              ...data.author,
+              id: data.author._id || data.author.id
+            }
+          : { username: 'Unknown' },
         comments: Array.isArray(data.comments) ? data.comments : []
       };
     } catch (error) {
@@ -119,7 +129,12 @@ export const addRecipe = createAsyncThunk(
         rating: data.rating || 0,
         cookTime: data.cookTime || 0,
         tags: Array.isArray(data.tags) ? data.tags : [],
-        author: data.author || { username: 'Unknown' }
+        author: data.author
+          ? {
+              ...data.author,
+              id: data.author._id || data.author.id
+            }
+          : { username: 'Unknown' }
       };
     } catch (error) {
       return rejectWithValue(error.message);

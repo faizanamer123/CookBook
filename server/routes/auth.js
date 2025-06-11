@@ -114,6 +114,30 @@ router.get('/me', auth, asyncHandler(async (req, res) => {
   res.json(user);
 }));
 
+// Get user by ID (for public profiles)
+router.get('/user/:id', asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      profilePicture: user.profilePicture,
+      bio: user.bio,
+      cookingSkillLevel: user.cookingSkillLevel,
+      dietaryPreferences: user.dietaryPreferences || [],
+      favoriteCuisines: user.favoriteCuisines || [],
+      socialMediaLinks: user.socialMediaLinks || {}
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error fetching user data' });
+  }
+}));
+
 // Update user profile
 router.put('/profile', auth, asyncHandler(async (req, res) => {
   try {

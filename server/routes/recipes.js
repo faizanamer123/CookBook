@@ -14,8 +14,21 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Get all recipes
 router.get('/', asyncHandler(async (req, res) => {
-  const recipes = await Recipe.find().populate('author', 'username email profilePicture');
-  res.json(recipes);
+  try {
+    const { author } = req.query;
+    const filter = {};
+    
+    // Filter by author if provided
+    if (author) {
+      filter.author = author;
+    }
+    
+    const recipes = await Recipe.find(filter).populate('author', 'username email profilePicture');
+    res.json(recipes);
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    res.status(500).json({ message: 'Error fetching recipes', error: error.message });
+  }
 }));
 
 // Get single recipe by ID
@@ -166,6 +179,7 @@ router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => 
       _id: populatedRecipe._id.toString(),
       author: {
         id: populatedRecipe.author._id.toString(),
+        _id: populatedRecipe.author._id.toString(),
         username: populatedRecipe.author.username,
         email: populatedRecipe.author.email,
         profilePicture: populatedRecipe.author.profilePicture
