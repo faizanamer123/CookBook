@@ -6,6 +6,8 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { Readable } = require('stream');
 const { auth } = require('../middleware/authMiddleware');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const router = express.Router();
 
@@ -17,6 +19,80 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 });
+
+// Configure Google Strategy
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: '/auth/google/callback',
+    proxy: true
+  },
+  async function(accessToken, refreshToken, profile, done) {
+    try {
+      console.log('Google profile:', profile);
+      
+      // Check if user already exists
+      let user = await User.findOne({ googleId: profile.id });
+      
+      if (!user) {
+        // Check if user exists with the same email
+        user = await User.findOne({ email: profile.emails[0].value });
+        
+        if (user) {
+          // Link Google account to existing user
+          user.googleId = profile.id;
+          await user.save();
+        } else {
+          // Create new user
+          user = await User.create({
+            googleId: profile.id,
+            email: profile.emails[0].value,
+            username: profile.emails[0].value.split('@')[0], // Use email prefix as username
+            profilePicture: profile.photos[0].value,
+            password: Math.random().toString(36).slice(-8) // Generate random password
+          });
+        }
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      console.error('Google auth error:', error);
+      return done(error, null);
+    }
+  }
+));
+
+// Google OAuth routes
+router.get('/google',
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account'
+  })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { 
+    session: false,
+    failureRedirect: '/login'
+  }),
+  asyncHandler(async (req, res) => {
+    try {
+      if (!req.user) {
+        throw new Error('No user found after Google authentication');
+      }
+      
+      const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      
+      // Redirect to the frontend callback URL with the token
+      const redirectUrl = `${process.env.CLIENT_URL}/auth/google/callback?token=${token}`;
+      console.log('Redirecting to:', redirectUrl);
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`);
+    }
+  })
+);
 
 // Helper function to upload to Cloudinary
 const uploadToCloudinary = async (buffer) => {
