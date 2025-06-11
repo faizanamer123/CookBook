@@ -13,6 +13,7 @@ const UserDashboard = lazy(() => import('./pages/UserDashboard/UserDashboard'));
 const Login = lazy(() => import('./pages/Login/Login'));
 const Register = lazy(() => import('./pages/Register/Register'));
 const RecipeDetails = lazy(() => import('./pages/RecipeDetails/RecipeDetails'));
+const UserProfile = lazy(() => import('./pages/UserProfile/UserProfile'));
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -77,6 +78,11 @@ function AppRoutes() {
             <Route path="/recipe/:id" element={
               <ProtectedRoute>
                 <RecipeDetails />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/:id" element={
+              <ProtectedRoute>
+                <UserProfile />
               </ProtectedRoute>
             } />
 

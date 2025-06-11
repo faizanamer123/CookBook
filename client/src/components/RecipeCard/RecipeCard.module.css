@@ -164,6 +164,23 @@
   font-weight: 500;
 }
 
+.profileButton {
+  margin-left: 10px;
+  padding: 2px 10px;
+  background: var(--primary, #6c5ce7);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profileButton:hover {
+  background: var(--primary-dark, #5649c0);
+}
+
 /* Loading skeleton styles */
 .skeleton {
   background: linear-gradient(

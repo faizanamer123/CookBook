@@ -1,0 +1,139 @@
+.profileContainer {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.profileCard {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  padding: 32px;
+  margin-bottom: 40px;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #eee;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.profileInfo {
+  flex: 1;
+}
+
+.userName {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: var(--primary, #6c5ce7);
+}
+
+.infoItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  color: var(--text, #444);
+}
+
+.infoIcon {
+  margin-right: 12px;
+  font-size: 1.1rem;
+  color: var(--primary, #6c5ce7);
+}
+
+.profileDetails {
+  border-top: 1px solid #eee;
+  padding-top: 24px;
+}
+
+.detailSection {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text, #444);
+}
+
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  padding: 6px 12px;
+  background: var(--primary-light, #d8d5f9);
+  color: var(--primary, #6c5ce7);
+  border-radius: 50px;
+  font-size: 0.9rem;
+}
+
+.recipesSection {
+  margin-top: 40px;
+}
+
+.recipesSectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text, #444);
+  border-bottom: 2px solid var(--primary-light, #d8d5f9);
+  padding-bottom: 12px;
+}
+
+.recipesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.noRecipes {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 0;
+  color: #888;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.loading, .error {
+  text-align: center;
+  margin: 40px 0;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+@media (max-width: 768px) {
+  .profileHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .infoItem {
+    justify-content: center;
+  }
+  
+  .recipesGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+} 

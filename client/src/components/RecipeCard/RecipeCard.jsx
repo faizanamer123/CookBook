@@ -143,6 +143,15 @@ const RecipeCard = ({
         <div className={styles.author}>
           <FaUser className={styles.icon} />
           <span>{authorName || 'Unknown'}</span>
+          {author && author.id && (
+            <Link
+              to={`/profile/${author.id}`}
+              className={styles.profileButton}
+              onClick={e => e.stopPropagation()}
+            >
+              View Profile
+            </Link>
+          )}
         </div>
         {displayTags.length > 0 && (
           <div className={styles.tags}>
