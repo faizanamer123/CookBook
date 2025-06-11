@@ -15,12 +15,20 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Get all recipes
 router.get('/', asyncHandler(async (req, res) => {
   try {
-    const { author } = req.query;
+    const { author, category } = req.query;
     const filter = {};
     
     // Filter by author if provided
     if (author) {
       filter.author = author;
+    }
+
+    // Filter by category if provided
+    if (category) {
+      const normalizedCategory = category.toLowerCase().trim();
+      filter.tags = {
+        $regex: new RegExp(`^${normalizedCategory}$|^${normalizedCategory}s$|^${normalizedCategory.replace('-', ' ')}$|^${normalizedCategory.replace('-', ' ')}s$`, 'i')
+      };
     }
     
     const recipes = await Recipe.find(filter).populate('author', 'username email profilePicture');
