@@ -103,7 +103,7 @@ const RecipeCard = ({
   };
 
   return (
-    <Link to={`/recipe/${id}`} className={styles.card}>
+    <div className={styles.card} onClick={() => navigate(`/recipe/${id}`)}>
       <div className={styles.imageContainer}>
         <img 
           src={getImageUrl()}
@@ -160,13 +160,15 @@ const RecipeCard = ({
           <FaUser className={styles.icon} />
           <span>{authorName || 'Unknown'}</span>
           {author && author.id && (
-            <Link
-              to={`/profile/${author.id}`}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${author.id}`);
+              }}
               className={styles.profileButton}
-              onClick={e => e.stopPropagation()}
             >
               View Profile
-            </Link>
+            </button>
           )}
         </div>
         {displayTags.length > 0 && (
@@ -182,7 +184,7 @@ const RecipeCard = ({
           </div>
         )}
       </div>
-    </Link>
+    </div>
   );
 };
 
