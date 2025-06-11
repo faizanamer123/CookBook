@@ -106,4 +106,43 @@
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
+}
+
+.categoryInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.categoryFilter {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.clearFilter {
+  padding: 0.5rem 1rem;
+  background-color: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.clearFilter:hover {
+  background-color: var(--background-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.categoryFilter strong {
+  font-weight: 600;
+  text-transform: capitalize;
 } 

@@ -46,6 +46,36 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = () => {
+    window.location.href = `${API_URL}/auth/google`;
+  };
+
+  const handleGoogleCallback = async (token) => {
+    try {
+      // Get user data using the token
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to get user data');
+      
+      // Update state and storage
+      setUser(data);
+      setToken(token);
+      localStorage.setItem('user', JSON.stringify(data));
+      localStorage.setItem('token', token);
+      
+      // Dispatch event to notify components of user change
+      window.dispatchEvent(new Event('userChanged'));
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const register = async (name, email, password) => {
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
@@ -209,6 +239,8 @@ export const AuthProvider = ({ children }) => {
     token,
     isAuthenticated,
     login,
+    loginWithGoogle,
+    handleGoogleCallback,
     register,
     logout,
     updateProfile,

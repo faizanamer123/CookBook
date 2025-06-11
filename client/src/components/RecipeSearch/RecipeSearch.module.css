@@ -89,7 +89,7 @@
   margin-bottom: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  background: var(--background-light, #fff);
+  background: var(--background);
   overflow: hidden;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .filtersPanel {
-  background: var(--background-light, #fff);
+  background: var(--background);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -159,9 +159,9 @@
 }
 
 .filterButton {
-  background: var(--background, #f5f7fa);
-  border: 1px solid var(--border-color, #e5e9f2);
-  color: var(--text, #4a4a4a);
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--text);
   padding: 0.5rem 1rem;
   border-radius: 50px;
   font-size: 0.875rem;
@@ -170,14 +170,24 @@
 }
 
 .filterButton:hover {
-  background: var(--background-dark, #e5e9f2);
+  background: var(--hover);
+  color: var(--text);
 }
 
 .filterButton.active {
-  background: var(--primary-light, #d8d5f9);
-  border-color: var(--primary, #6c5ce7);
-  color: var(--primary, #6c5ce7);
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: #fff;
   font-weight: 500;
+}
+
+[data-theme='light'] .filterButton.active {
+  color: #fff;
+}
+
+.filterButton.active:hover {
+  background: var(--primary);
+  color: #fff;
 }
 
 .filterActions {
@@ -189,7 +199,7 @@
 .clearButton {
   background: none;
   border: none;
-  color: var(--text-muted, #828282);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 0.875rem;
   padding: 0.5rem 1rem;
@@ -197,7 +207,7 @@
 }
 
 .clearButton:hover {
-  color: var(--error, #e74c3c);
+  color: var(--error);
 }
 
 @media (max-width: 768px) {

@@ -24,7 +24,7 @@ const Home = () => {
   };
 
   const handleCategoryClick = (category) => {
-    navigate(`/browse?category=${encodeURIComponent(category)}`);
+    navigate(`/browse?category=${encodeURIComponent(category.name)}`);
   };
 
   const handleProfileMenuToggle = () => setShowProfileMenu((prev) => !prev);
@@ -46,18 +46,18 @@ const Home = () => {
       .catch(err => console.error('Failed to fetch recipes', err));
   }, []);
 
-  // Mock data for categories
+  // Categories with normalized names
   const categories = [
-    { id: 1, name: 'Breakfast', icon: '🍳', count: 45 },
-    { id: 2, name: 'Lunch', icon: '🥪', count: 78 },
-    { id: 3, name: 'Dinner', icon: '🍽️', count: 92 },
-    { id: 4, name: 'Desserts', icon: '🍰', count: 56 },
-    { id: 5, name: 'Vegetarian', icon: '🥗', count: 34 },
-    { id: 6, name: 'Fast Food', icon: '🍔', count: 65 },
-    { id: 7, name: 'Soups', icon: '🥣', count: 40 },
-    { id: 8, name: 'Salads', icon: '🥗', count: 55 },
-    { id: 9, name: 'Drinks', icon: '🍹', count: 30 },
-    { id: 10, name: 'Snacks', icon: '🥨', count: 70 }
+    { id: 1, name: 'breakfast', displayName: 'Breakfast', icon: '🍳', count: 45 },
+    { id: 2, name: 'lunch', displayName: 'Lunch', icon: '🥪', count: 78 },
+    { id: 3, name: 'dinner', displayName: 'Dinner', icon: '🍽️', count: 92 },
+    { id: 4, name: 'dessert', displayName: 'Desserts', icon: '🍰', count: 56 },
+    { id: 5, name: 'vegetarian', displayName: 'Vegetarian', icon: '🥗', count: 34 },
+    { id: 6, name: 'fast-food', displayName: 'Fast Food', icon: '🍔', count: 65 },
+    { id: 7, name: 'soup', displayName: 'Soups', icon: '🥣', count: 40 },
+    { id: 8, name: 'salad', displayName: 'Salads', icon: '🥗', count: 55 },
+    { id: 9, name: 'drink', displayName: 'Drinks', icon: '🍹', count: 30 },
+    { id: 10, name: 'snack', displayName: 'Snacks', icon: '🥨', count: 70 }
   ];
 
   // Helper to get initials from name
@@ -188,11 +188,11 @@ const Home = () => {
             <div 
               key={category.id} 
               className={styles.categoryCard}
-              onClick={() => handleCategoryClick(category.name)}
+              onClick={() => handleCategoryClick(category)}
               style={{ cursor: 'pointer' }}
             >
               <span className={styles.categoryIcon}>{category.icon}</span>
-              <h3>{category.name}</h3>
+              <h3>{category.displayName}</h3>
               <p>{category.count} recipes</p>
             </div>
           ))}

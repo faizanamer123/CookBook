@@ -5,11 +5,12 @@ import RecipeCard from '../../components/RecipeCard/RecipeCard';
 import RecipeSearch from '../../components/RecipeSearch/RecipeSearch';
 import styles from './Browse.module.css';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Browse = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { recipes, loading, error } = useSelector(state => state.recipes);
   
@@ -29,7 +30,21 @@ const Browse = () => {
       return;
     }
     dispatch(fetchRecipes());
-  }, [dispatch, user, navigate]);
+
+    // Get category from URL
+    const params = new URLSearchParams(location.search);
+    const category = params.get('category');
+    if (category) {
+      setSearchParams(prev => ({
+        ...prev,
+        searchTerm: '',
+        filters: {
+          ...prev.filters,
+          cuisine: category
+        }
+      }));
+    }
+  }, [dispatch, user, navigate, location.search]);
 
   const handleSearch = (params) => {
     setSearchParams(params);
@@ -45,8 +60,9 @@ const Browse = () => {
       const matchesSearch = !searchParams.searchTerm || 
         (recipe.title && recipe.title.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
         (recipe.description && recipe.description.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
-        (recipe.tags && recipe.tags.some(tag => tag.toLowerCase().includes(searchParams.searchTerm.toLowerCase()))) ||
-        (recipe.ingredients && recipe.ingredients.some(ing => ing.toLowerCase().includes(searchParams.searchTerm.toLowerCase())));
+        (recipe.tags && recipe.tags.some(tag => 
+          typeof tag === 'string' && tag.toLowerCase().includes(searchParams.searchTerm.toLowerCase())
+        ));
 
       // Difficulty filter
       const matchesDifficulty = !searchParams.filters.difficulty || 
@@ -58,26 +74,64 @@ const Browse = () => {
         (searchParams.filters.cookTime === 'medium' && recipe.cookTime >= 30 && recipe.cookTime <= 60) ||
         (searchParams.filters.cookTime === 'long' && recipe.cookTime > 60);
 
-      // Cuisine filter (from tags)
-      const matchesCuisine = !searchParams.filters.cuisine || 
-        (recipe.tags && recipe.tags.includes(searchParams.filters.cuisine));
+      // Category filter (from tags)
+      const matchesCategory = !searchParams.filters.cuisine || 
+        (recipe.tags && recipe.tags.some(tag =>
+          typeof tag === 'string' && tag.toLowerCase() === searchParams.filters.cuisine.toLowerCase()
+        ));
       
       // Dietary preferences filter (from tags)
       const matchesDietary = searchParams.filters.dietary.length === 0 || 
-        (recipe.tags && searchParams.filters.dietary.every(pref => recipe.tags.includes(pref)));
+        (recipe.dietaryRestrictions && searchParams.filters.dietary.every(pref => 
+          recipe.dietaryRestrictions.some(restriction => 
+            typeof restriction === 'string' && restriction.toLowerCase() === pref.toLowerCase()
+          )
+        ));
 
-      return matchesSearch && matchesDifficulty && matchesCookTime && matchesCuisine && matchesDietary;
+      return matchesSearch && matchesDifficulty && matchesCookTime && matchesCategory && matchesDietary;
     });
   }, [recipes, searchParams]);
+
+  const getCategoryMessage = () => {
+    if (!searchParams.filters.cuisine) return null;
+    
+    if (filteredRecipes.length === 0) {
+      return `No recipes found in the ${searchParams.filters.cuisine} category.`;
+    }
+    
+    return `Showing ${filteredRecipes.length} recipe${filteredRecipes.length === 1 ? '' : 's'} in the ${searchParams.filters.cuisine} category.`;
+  };
 
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
         <h1>Browse Recipes</h1>
         <p>Discover delicious recipes from our community</p>
+        {searchParams.filters.cuisine && (
+          <div className={styles.categoryInfo}>
+            <p className={styles.categoryFilter}>
+              {getCategoryMessage()}
+            </p>
+            <button 
+              className={styles.clearFilter}
+              onClick={() => {
+                setSearchParams(prev => ({
+                  ...prev,
+                  filters: {
+                    ...prev.filters,
+                    cuisine: ''
+                  }
+                }));
+                navigate('/browse');
+              }}
+            >
+              Clear Category Filter
+            </button>
+          </div>
+        )}
       </div>
       
-      <RecipeSearch onSearch={handleSearch} />
+      <RecipeSearch onSearch={handleSearch} initialSearchTerm={searchParams.searchTerm} initialFilters={searchParams.filters} />
       
       <div className={styles.recipesContainer}>
         {loading ? (
@@ -94,6 +148,23 @@ const Browse = () => {
           <div className={styles.noResults}>
             <h3>No recipes found</h3>
             <p>Try adjusting your search or filters</p>
+            {searchParams.filters.cuisine && (
+              <button 
+                className={styles.clearFilter}
+                onClick={() => {
+                  setSearchParams(prev => ({
+                    ...prev,
+                    filters: {
+                      ...prev.filters,
+                      cuisine: ''
+                    }
+                  }));
+                  navigate('/browse');
+                }}
+              >
+                Clear Category Filter
+              </button>
+            )}
           </div>
         ) : (
           <div className={styles.recipesGrid}>
@@ -107,7 +178,7 @@ const Browse = () => {
                 cookTime={recipe.cookTime}
                 author={recipe.author}
                 tags={recipe.tags}
-                likeCount={recipe.likeCount}
+                likeCount={recipe.likes?.length || 0}
               />
             ))}
           </div>

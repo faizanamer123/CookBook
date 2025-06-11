@@ -5,11 +5,13 @@
 }
 
 .profileCard {
-  background: #fff;
+  background: var(--background);
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.07);
   padding: 32px;
   margin-bottom: 40px;
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .profileHeader {
@@ -24,7 +26,7 @@
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #eee;
+  border: 3px solid var(--border);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
@@ -43,7 +45,7 @@
   display: flex;
   align-items: center;
   margin-bottom: 12px;
-  color: var(--text, #444);
+  color: var(--text);
 }
 
 .infoIcon {
@@ -53,7 +55,7 @@
 }
 
 .profileDetails {
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   padding-top: 24px;
 }
 
@@ -65,7 +67,7 @@
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 12px;
-  color: var(--text, #444);
+  color: var(--text);
 }
 
 .tagContainer {
@@ -90,7 +92,7 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 24px;
-  color: var(--text, #444);
+  color: var(--text);
   border-bottom: 2px solid var(--primary-light, #d8d5f9);
   padding-bottom: 12px;
 }
@@ -105,7 +107,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 40px 0;
-  color: #888;
+  color: var(--text-muted);
   font-size: 1.1rem;
   font-style: italic;
 }
@@ -113,7 +115,7 @@
 .loading, .error {
   text-align: center;
   margin: 40px 0;
-  color: #888;
+  color: var(--text-muted);
   font-size: 1.1rem;
 }
 

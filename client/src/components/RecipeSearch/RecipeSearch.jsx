@@ -2,15 +2,22 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styles from './RecipeSearch.module.css';
 
-const RecipeSearch = ({ onSearch }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const RecipeSearch = ({ onSearch, initialSearchTerm = '', initialFilters = {} }) => {
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [filters, setFilters] = useState({
     difficulty: '',
     cookTime: '',
     cuisine: '',
-    dietary: []
+    dietary: [],
+    ...initialFilters
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sync with initial props if they change
+  React.useEffect(() => {
+    setSearchTerm(initialSearchTerm);
+    setFilters(prev => ({ ...prev, ...initialFilters }));
+  }, [initialSearchTerm, initialFilters]);
 
   useEffect(() => {
     // Debounce search to avoid too many updates

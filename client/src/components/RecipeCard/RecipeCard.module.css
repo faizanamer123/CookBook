@@ -1,9 +1,9 @@
 .card {
   display: block;
-  background: var(--background-light, #fff);
+  background: var(--background);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--box-shadow);
   transition: transform 0.3s, box-shadow 0.3s;
   text-decoration: none;
   height: 100%;
@@ -12,14 +12,14 @@
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--box-shadow-hover);
 }
 
 .imageContainer {
   position: relative;
   height: 220px;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background-color: var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,7 +31,7 @@
   object-fit: cover;
   transition: transform 0.5s ease;
   display: block;
-  background-color: #f5f5f5;
+  background-color: var(--background);
 }
 
 .card:hover .recipeImage {
@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--background);
   color: var(--text);
   border: none;
   border-radius: 50px;
@@ -67,22 +67,22 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--box-shadow);
   transition: all 0.2s;
 }
 
 .actionButton:hover {
-  background: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: var(--hover);
+  box-shadow: var(--box-shadow-hover);
 }
 
 .actionButton.liked {
-  background: var(--primary, #6c5ce7);
+  background: var(--primary);
   color: white;
 }
 
 .actionButton.liked:hover {
-  background: var(--primary-dark, #5649c0);
+  background: var(--hover);
 }
 
 .deleteButton {
@@ -157,7 +157,7 @@
 
 .tag {
   font-size: 0.75rem;
-  background: var(--background, #f5f7fa);
+  background: var(--secondary);
   color: var(--text);
   padding: 4px 8px;
   border-radius: 50px;
@@ -166,8 +166,8 @@
 
 .moreTag {
   font-size: 0.75rem;
-  background: var(--primary-light, #d8d5f9);
-  color: var(--primary, #6c5ce7);
+  background: var(--primary);
+  color: white;
   padding: 4px 8px;
   border-radius: 50px;
   white-space: nowrap;
@@ -177,8 +177,8 @@
 .profileButton {
   margin-left: 10px;
   padding: 2px 10px;
-  background: var(--primary, #6c5ce7);
-  color: #fff;
+  background: var(--primary);
+  color: white;
   border: none;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -188,7 +188,7 @@
 }
 
 .profileButton:hover {
-  background: var(--primary-dark, #5649c0);
+  background: var(--hover);
 }
 
 /* Loading skeleton styles */

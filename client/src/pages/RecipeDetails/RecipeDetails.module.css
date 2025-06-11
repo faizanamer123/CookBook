@@ -16,15 +16,17 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: none;
-  border: 1px solid #ddd;
+  background: var(--background);
+  border: 1px solid var(--border);
   border-radius: 8px;
+  color: var(--text);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .backButton:hover {
-  background-color: #f5f5f5;
+  background: var(--hover);
+  color: var(--text);
 }
 
 .recipeImageWrapper {
@@ -112,7 +114,7 @@
 .recipeTitle {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--text);
 }
 
 .recipeMetadata {
@@ -129,7 +131,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #666;
+  color: var(--text);
 }
 
 .difficultyTag,
@@ -153,7 +155,7 @@
 .recipeDescription {
   margin-bottom: 2rem;
   line-height: 1.6;
-  color: #666;
+  color: var(--text);
 }
 
 .ingredientsSection,
@@ -164,7 +166,7 @@
 .ingredientsSection h2,
 .instructionsSection h2 {
   margin-bottom: 1rem;
-  color: #333;
+  color: var(--text);
 }
 
 .ingredientsList {
@@ -186,11 +188,11 @@
 
 .ingredientAmount {
   font-weight: 500;
-  color: #495057;
+  color: var(--text);
 }
 
 .ingredientName {
-  color: #666;
+  color: var(--text);
 }
 
 .instructionsList {
@@ -223,7 +225,7 @@
 .stepText {
   flex: 1;
   line-height: 1.6;
-  color: #666;
+  color: var(--text);
 }
 
 .commentsSection {
@@ -328,19 +330,19 @@
 
 .commentAuthor {
   font-weight: 500;
-  color: #333;
+  color: var(--text);
 }
 
 .commentText {
   margin: 0.75rem 0;
   line-height: 1.6;
-  color: #666;
+  color: var(--text);
 }
 
 .commentDate {
   display: block;
   margin-top: 0.5rem;
-  color: #666;
+  color: var(--text);
   font-size: 0.875rem;
 }
 
@@ -349,7 +351,7 @@
   padding: 1.5rem;
   background-color: #f8f9fa;
   border-radius: 12px;
-  color: #666;
+  color: var(--text);
 }
 
 .loginPrompt button {
@@ -363,7 +365,7 @@
 
 .noComments {
   text-align: center;
-  color: #666;
+  color: var(--text);
   padding: 2rem;
   background-color: #f8f9fa;
   border-radius: 12px;
@@ -389,6 +391,8 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  background: var(--background);
+  min-height: 100vh;
 }
 
 .header {
@@ -400,6 +404,7 @@
   border-radius: 12px;
   overflow: hidden;
   height: 400px;
+  background: var(--background);
 }
 
 .bannerImage {
@@ -423,6 +428,7 @@
   font-weight: 700;
   margin-bottom: 1rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  color: white;
 }
 
 .meta {
@@ -438,6 +444,7 @@
   gap: 0.5rem;
   font-size: 1.1rem;
   font-weight: 600;
+  color: white;
 }
 
 .author {
@@ -446,6 +453,7 @@
   gap: 0.75rem;
   font-size: 1.1rem;
   font-weight: 500;
+  color: white;
 }
 
 .avatar {
@@ -469,27 +477,26 @@
   padding: 0.75rem 1.25rem;
   font-weight: 500;
   transition: all 0.2s ease;
-}
-
-.actions button svg {
-  width: 20px;
-  height: 20px;
-  stroke-width: 2;
+  background: var(--background);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
 }
 
 .actions button:hover {
   transform: translateY(-2px);
+  background: var(--hover);
 }
 
 .actions button.danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
+  background-color: var(--error);
+  border-color: var(--error);
   color: white;
 }
 
 .actions button.danger:hover {
-  background-color: #c82333;
-  border-color: #c82333;
+  background-color: var(--error-light);
+  border-color: var(--error-light);
 }
 
 /* Ensure text is visible in both light and dark modes */
@@ -517,6 +524,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
+  margin-top: 2rem;
 }
 
 .main {
@@ -530,6 +538,7 @@
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: var(--box-shadow);
+  border: 1px solid var(--border);
 }
 
 .ingredientsList {
@@ -543,6 +552,7 @@
   align-items: center;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 
 .ingredient:last-child {
@@ -555,6 +565,7 @@
   gap: 0.5rem;
   cursor: pointer;
   width: 100%;
+  color: var(--text);
 }
 
 .checkbox {
@@ -565,6 +576,7 @@
   appearance: none;
   cursor: pointer;
   position: relative;
+  background: var(--background);
 }
 
 .checkbox:checked {
@@ -586,12 +598,14 @@
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: var(--box-shadow);
+  border: 1px solid var(--border);
 }
 
 .step {
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  color: var(--text);
 }
 
 .step:last-child {
@@ -615,6 +629,7 @@
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: var(--box-shadow);
+  border: 1px solid var(--border);
 }
 
 .commentHeader {
@@ -628,34 +643,17 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.commentAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.authorInitials {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #007bff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+  color: var(--text);
 }
 
 .commentText {
   margin: 0.5rem 0;
   line-height: 1.5;
+  color: var(--text);
 }
 
 .commentDate {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
@@ -676,7 +674,7 @@
 
 .noComments {
   text-align: center;
-  color: #666;
+  color: var(--text);
   padding: 2rem;
 }
 
@@ -720,6 +718,7 @@
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: var(--box-shadow);
+  border: 1px solid var(--border);
   margin-bottom: 1.5rem;
 }
 
@@ -729,6 +728,7 @@
   align-items: center;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 
 .infoItem:last-child {
@@ -737,6 +737,7 @@
 
 .infoLabel {
   font-weight: 600;
+  color: var(--text);
 }
 
 .infoValue {
@@ -751,8 +752,8 @@
 }
 
 .tag {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: var(--secondary);
+  color: var(--text);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -911,4 +912,37 @@
   .commentRating {
     margin-top: 0.5rem;
   }
+}
+
+.overallRating, .commentForm, .comment, .loginPrompt, .noComments, .error, .loading, .ingredients, .instructions, .comments, .recipeInfo, .sidebar, .container, .banner, .content, .main, .step, .infoItem, .tag {
+  background: var(--background) !important;
+  color: var(--text) !important;
+  border: none !important;
+}
+
+.recipeContent, .recipeMetadata, .ingredientItem, .difficultyTag, .cuisineTag, .recipeImage, .noImage {
+  background: var(--background) !important;
+  color: var(--text) !important;
+  border: none !important;
+}
+
+.difficultyTag {
+  background: var(--secondary) !important;
+  color: var(--text) !important;
+}
+
+.cuisineTag {
+  background: var(--primary) !important;
+  color: #fff !important;
+}
+
+.recipeTitle, .ingredientsSection h2, .instructionsSection h2, .recipeDescription, .ingredientName, .ingredientAmount, .metaItem, .stepText, .instructionStep, .commentsSection h2, .overallRating, .commentText, .commentAuthor, .commentDate {
+  color: var(--text) !important;
+}
+
+.instructionStep, .commentsSection, .overallRating, .commentForm, .comment, .loginPrompt, .noComments, .error, .loading, .commentTextarea {
+  background: var(--background) !important;
+  color: var(--text) !important;
+  border: none !important;
+  box-shadow: none !important;
 } 

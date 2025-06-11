@@ -8,6 +8,9 @@
   --text-dark-light: #2E2E2E;
   --text-muted-light: #6B6B6B;
   --hover-light: #B89FED;
+  --success-light: rgba(39, 174, 96, 0.1);
+  --error-light: rgba(231, 76, 60, 0.1);
+  --border-light: #E0E0E0;
   
   /* Dark Theme Variables */
   --primary-dark: #6A5ACD;
@@ -15,12 +18,17 @@
   --background-dark: #1E1E2F;
   --text-light-dark: #F0EFFF;
   --text-muted-dark: #BBBBBB;
+  --success-dark: rgba(39, 174, 96, 0.2);
+  --error-dark: rgba(231, 76, 60, 0.2);
+  --border-dark: #2D2D3F;
   
   /* Common Variables */
   --transition-speed: 0.3s;
   --border-radius: 8px;
   --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   --box-shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.3);
+  --success: #27ae60;
+  --error: #e74c3c;
 }
 
 [data-theme='light'] {
@@ -30,6 +38,9 @@
   --text: var(--text-dark-light);
   --text-muted: var(--text-muted-light);
   --hover: var(--hover-light);
+  --success-light: var(--success-light);
+  --error-light: var(--error-light);
+  --border: var(--border-light);
 }
 
 [data-theme='dark'] {
@@ -38,6 +49,9 @@
   --background: var(--background-dark);
   --text: var(--text-light-dark);
   --text-muted: var(--text-muted-dark);
+  --success-light: var(--success-dark);
+  --error-light: var(--error-dark);
+  --border: var(--border-dark);
 }
 
 * {

@@ -9,7 +9,7 @@ import { FiEye, FiEyeOff } from 'react-icons/fi';
 const Login = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -116,8 +116,9 @@ const Login = () => {
   };
 
   const handleSocialLogin = (provider) => {
-    // TODO: Implement social login
-    console.log(`Logging in with ${provider}`);
+    if (provider === 'google') {
+      loginWithGoogle();
+    }
   };
 
   return (
