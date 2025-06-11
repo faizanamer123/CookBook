@@ -1,9 +1,12 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
@@ -46,6 +49,7 @@ cloudinary.api.ping()
   })
   .catch(error => {
     console.error('Cloudinary connection failed:', error);
+    process.exit(1);
   });
 
 // Configure multer for memory storage

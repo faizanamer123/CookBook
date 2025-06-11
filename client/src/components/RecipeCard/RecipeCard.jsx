@@ -14,6 +14,7 @@ const RecipeCard = ({
   id, 
   title, 
   imageUrl, 
+  image,
   rating = 0, 
   cookTime = '', 
   author = '', 
@@ -28,15 +29,24 @@ const RecipeCard = ({
   const [liked, setLiked] = useState(isLiked);
   const [likes, setLikes] = useState(likeCount);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const authorName = typeof author === 'object' ? author.username : author;
   const isAuthor = typeof author === 'object' && user && author.id === user.id;
   const displayTags = tags.slice(0, 3);
   const displayCookTime = typeof cookTime === 'number' ? `${cookTime} mins` : cookTime;
 
+  const getImageUrl = () => {
+    if (imageError) {
+      return image || DEFAULT_IMAGE;
+    }
+    return imageUrl || image || DEFAULT_IMAGE;
+  };
+
   const handleImageError = (e) => {
     e.target.onerror = null;
-    e.target.src = DEFAULT_IMAGE;
+    setImageError(true);
+    e.target.src = image || DEFAULT_IMAGE;
   };
 
   const handleLike = async (e) => {
@@ -90,10 +100,11 @@ const RecipeCard = ({
     <Link to={`/recipe/${id}`} className={styles.card}>
       <div className={styles.imageContainer}>
         <img 
-          src={imageUrl || DEFAULT_IMAGE} 
+          src={getImageUrl()}
           alt={title}
           onError={handleImageError}
           loading="lazy"
+          className={styles.recipeImage}
         />
         <div className={styles.actions}>
           <button 
@@ -154,6 +165,7 @@ RecipeCard.propTypes = {
   id: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   imageUrl: PropTypes.string,
+  image: PropTypes.string,
   rating: PropTypes.number,
   cookTime: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   author: PropTypes.oneOfType([

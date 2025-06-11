@@ -1,3 +1,390 @@
+.recipeDetailsContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.recipeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background-color: #f5f5f5;
+}
+
+.recipeImageWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 400px;
+  margin: 0 auto 2rem;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recipeImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: #f8f9fa;
+}
+
+.noImage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  font-size: 1.25rem;
+}
+
+.recipeActions {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 1.25rem;
+}
+
+.actionButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.actionButton.liked {
+  color: #dc3545;
+}
+
+.actionButton.bookmarked {
+  color: #ffc107;
+}
+
+.deleteButton {
+  color: #dc3545;
+}
+
+.deleteButton:hover {
+  background-color: #dc354520;
+}
+
+.recipeContent {
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+.recipeTitle {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.recipeMetadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+}
+
+.difficultyTag,
+.cuisineTag {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.difficultyTag {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.cuisineTag {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.recipeDescription {
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  color: #666;
+}
+
+.ingredientsSection,
+.instructionsSection {
+  margin-bottom: 2rem;
+}
+
+.ingredientsSection h2,
+.instructionsSection h2 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.ingredientsList {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.ingredientItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.ingredientAmount {
+  font-weight: 500;
+  color: #495057;
+}
+
+.ingredientName {
+  color: #666;
+}
+
+.instructionsList {
+  list-style: none;
+  padding: 0;
+  counter-reset: instruction;
+}
+
+.instructionStep {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stepNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.stepText {
+  flex: 1;
+  line-height: 1.6;
+  color: #666;
+}
+
+.commentsSection {
+  margin-top: 3rem;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.overallRating {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.commentForm {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.commentTextarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.commentTextarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.ratingInput {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.starRating {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.starButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1.5rem;
+  color: #ffd700;
+  transition: transform 0.2s;
+}
+
+.starButton:not(.readOnly):hover {
+  transform: scale(1.1);
+}
+
+.starButton.readOnly {
+  cursor: default;
+}
+
+.filledStar {
+  color: #ffd700;
+}
+
+.emptyStar {
+  color: #ddd;
+}
+
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.comment {
+  padding: 1.5rem;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background-color: #fafafa;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.commentAuthor {
+  font-weight: 500;
+  color: #333;
+}
+
+.commentText {
+  margin: 0.75rem 0;
+  line-height: 1.6;
+  color: #666;
+}
+
+.commentDate {
+  display: block;
+  margin-top: 0.5rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.loginPrompt {
+  text-align: center;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  color: #666;
+}
+
+.loginPrompt button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.noComments {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.error {
+  text-align: center;
+  color: #dc3545;
+  padding: 2rem;
+  background-color: #f8d7da;
+  border-radius: 12px;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -230,117 +617,36 @@
   box-shadow: var(--box-shadow);
 }
 
-.commentForm {
-  margin: 1rem 0 2rem;
-  background: var(--background-light, #f9f9f9);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-
-.commentTextarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  resize: vertical;
-  background: var(--background);
-  color: var(--text);
-  font-family: inherit;
-  transition: border-color 0.3s ease;
-}
-
-.commentTextarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
-}
-
-.ratingInput {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.ratingInput label {
-  font-weight: 600;
-  margin-right: 1rem;
-}
-
-.stars {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.starButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.5rem;
-  padding: 0.25rem;
-  line-height: 1;
-  transition: transform 0.1s ease;
-}
-
-.starButton:hover {
-  transform: scale(1.2);
-}
-
-.filledStar {
-  color: #ffc107;
-}
-
-.emptyStar {
-  color: #e0e0e0;
-}
-
-.commentsList {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-.comment {
-  background: var(--background-light, #f9f9f9);
-  padding: 1.25rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  transition: box-shadow 0.3s ease;
-}
-
-.comment:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
 .commentHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .commentAuthor {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .commentAvatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.commentRating {
+.authorInitials {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
   display: flex;
-  gap: 0.15rem;
-  font-size: 1.2rem;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
 .commentText {
@@ -349,16 +655,46 @@
 }
 
 .commentDate {
-  font-size: 0.85rem;
-  color: var(--text-light);
-  margin-top: 0.75rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.loginPrompt {
+  text-align: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.loginPrompt button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .noComments {
   text-align: center;
-  color: var(--text-light);
-  padding: 2rem 0;
-  font-style: italic;
+  color: #666;
+  padding: 2rem;
+}
+
+.shareButton {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.shareButton:hover {
+  background-color: #f0f0f0;
 }
 
 .errorMessage {
@@ -465,6 +801,82 @@
 .notFound {
   font-size: 1.5rem;
   color: #666;
+}
+
+.deleteConfirm {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  text-align: center;
+}
+
+.deleteConfirm p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.deleteActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.cancelButton,
+.confirmButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.cancelButton:hover {
+  background-color: #dee2e6;
+}
+
+.confirmButton {
+  background-color: #dc3545;
+  color: white;
+}
+
+.confirmButton:hover {
+  background-color: #c82333;
+}
+
+.error {
+  margin: 1rem auto;
+  padding: 1rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 600px;
+}
+
+.authorLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.authorLink:hover {
+  color: var(--primary);
 }
 
 @media (max-width: 768px) {
