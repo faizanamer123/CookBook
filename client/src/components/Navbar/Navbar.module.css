@@ -1,5 +1,5 @@
 .navbar {
-  background: var(--background);
+  background: var(--background) !important;
   border-bottom: 1px solid var(--border);
   position: fixed;
   top: 0;
