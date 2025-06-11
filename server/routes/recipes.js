@@ -490,65 +490,101 @@ router.get('/:id/like', auth, asyncHandler(async (req, res) => {
 }));
 
 // Toggle bookmark on a recipe
-router.post('/:id/bookmark', auth, async (req, res) => {
+router.post('/:id/bookmark', auth, asyncHandler(async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const bookmarkIndex = user.savedRecipes.indexOf(recipe._id);
+    // Convert recipe ID to string for comparison
+    const recipeIdStr = recipe._id.toString();
     
-    if (bookmarkIndex === -1) {
+    // Check if recipe is already bookmarked
+    const savedRecipeIds = user.savedRecipes.map(id => id.toString());
+    const isBookmarked = savedRecipeIds.includes(recipeIdStr);
+    
+    console.log('Toggle bookmark check:', {
+      recipeId: recipeIdStr,
+      userId: user._id.toString(),
+      currentlyBookmarked: isBookmarked,
+      savedRecipeCount: user.savedRecipes.length
+    });
+
+    if (isBookmarked) {
+      // Remove bookmark
+      user.savedRecipes = user.savedRecipes.filter(id => id.toString() !== recipeIdStr);
+    } else {
       // Add bookmark
       user.savedRecipes.push(recipe._id);
-    } else {
-      // Remove bookmark
-      user.savedRecipes.splice(bookmarkIndex, 1);
     }
 
     await user.save();
+    
+    console.log('After toggle:', {
+      newBookmarkState: !isBookmarked,
+      newSavedRecipeCount: user.savedRecipes.length
+    });
+    
     res.json({ 
-      isBookmarked: bookmarkIndex === -1,
+      isBookmarked: !isBookmarked,
       savedRecipes: user.savedRecipes
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Bookmark toggle error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
-});
-
-// Get user's bookmarked recipes
-router.get('/bookmarks', auth, asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id)
-    .populate({
-      path: 'savedRecipes',
-      populate: {
-        path: 'author',
-        select: 'username email profilePicture'
-      }
-    });
-  
-  res.json(user.savedRecipes);
 }));
 
-// Get user's liked recipes
-router.get('/liked', auth, asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id)
-    .populate({
-      path: 'likedRecipes',
-      populate: {
-        path: 'author',
-        select: 'username email profilePicture'
-      }
-    });
-  
-  res.json(user.likedRecipes);
+// Get user's bookmarked recipes - Moved to the top of the file
+router.get('/user/bookmarks', auth, asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate({
+        path: 'savedRecipes',
+        populate: {
+          path: 'author',
+          select: 'username email profilePicture'
+        }
+      });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user.savedRecipes);
+  } catch (error) {
+    console.error('Error fetching bookmarks:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+}));
+
+// Get user's liked recipes - Moved to the top of the file
+router.get('/user/liked', auth, asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate({
+        path: 'likedRecipes',
+        populate: {
+          path: 'author',
+          select: 'username email profilePicture'
+        }
+      });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user.likedRecipes);
+  } catch (error) {
+    console.error('Error fetching liked recipes:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 }));
 
 module.exports = router; 

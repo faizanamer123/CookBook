@@ -6,8 +6,15 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('user'));
-    } catch {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        console.log('User loaded from localStorage:', parsedUser);
+        return parsedUser;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing user from localStorage:', error);
       return null;
     }
   });
@@ -31,10 +38,21 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Login failed');
       
+      // Log the user data received from the server
+      console.log('Login response data:', data);
+      
+      // Make sure all user data is properly structured
+      const userData = {
+        ...data.user,
+        id: data.user.id || data.user._id,
+        _id: data.user._id || data.user.id,
+        profilePicture: data.user.profilePicture || null
+      };
+      
       // Update state and storage synchronously
-      setUser(data.user);
+      setUser(userData);
       setToken(data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', data.token);
       
       // Dispatch event to notify components of user change
@@ -56,9 +74,20 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Registration failed');
       
-      setUser(data.user);
+      // Log the user data received from the server
+      console.log('Register response data:', data);
+      
+      // Make sure all user data is properly structured
+      const userData = {
+        ...data.user,
+        id: data.user.id || data.user._id,
+        _id: data.user._id || data.user.id,
+        profilePicture: data.user.profilePicture || null
+      };
+      
+      setUser(userData);
       setToken(data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', data.token);
       
       // Dispatch event to notify components of user change
@@ -91,6 +120,52 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Add token validation on initialization
+  useEffect(() => {
+    const validateToken = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) return;
+      
+      try {
+        const response = await fetch(`${API_URL}/auth/validate-token`, {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          // Token is invalid, clear auth state
+          console.warn('Stored token is invalid, logging out');
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          return;
+        }
+        
+        // Token is valid, update user data if needed
+        if (!user) {
+          const userData = await response.json();
+          setUser(userData.user);
+          localStorage.setItem('user', JSON.stringify(userData.user));
+        }
+      } catch (error) {
+        console.error('Error validating token:', error);
+      }
+    };
+    
+    validateToken();
+  }, []);
+
+  // Add debugging for profile picture
+  useEffect(() => {
+    if (user && user.profilePicture) {
+      console.log('User has profile picture:', user.profilePicture);
+    } else if (user) {
+      console.log('User has no profile picture');
+    }
+  }, [user]);
 
   const updateProfile = async (profileData) => {
     try {
@@ -160,14 +235,29 @@ export const AuthProvider = ({ children }) => {
       }
       
       const data = await response.json();
+      console.log('Profile picture upload response:', data);
       
-      // Update user with new profile picture URL
-      const updatedUser = { ...user, profilePicture: data.profilePicture };
+      // Update user with new profile picture URL and consistent ID format
+      const updatedUser = { 
+        ...user, 
+        profilePicture: data.profilePicture,
+        id: user.id || user._id,
+        _id: user._id || user.id
+      };
+      
+      console.log('Updating user with new profile picture:', updatedUser);
+      
+      // Update state and localStorage
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
       // Dispatch event to notify components of user change
       window.dispatchEvent(new Event('userChanged'));
+      
+      // Force a refresh to update UI across the app
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
       
       return { success: true, profilePicture: data.profilePicture };
     } catch (error) {

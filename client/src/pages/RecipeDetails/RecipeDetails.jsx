@@ -6,6 +6,8 @@ import styles from './RecipeDetails.module.css';
 import Button from '../../components/Button/Button';
 import { FaHeart, FaRegHeart, FaBookmark, FaRegBookmark, FaEdit, FaTrash, FaArrowLeft, FaClock, FaUtensils, FaStar, FaRegStar, FaShare } from 'react-icons/fa';
 import { API_URL } from '../../config';
+import { useDispatch } from 'react-redux';
+import { fetchSavedRecipes } from '../../store/recipesSlice';
 
 const StarRating = ({ rating, onRatingChange, readOnly = false }) => {
   return (
@@ -39,26 +41,99 @@ const RecipeDetails = () => {
   const [newRating, setNewRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const dispatch = useDispatch();
   
   useEffect(() => {
+    if (user) {
+      // Ensure user ID is normalized for comparisons
+      if (user._id && !user.id) {
+        user.id = user._id;
+      } else if (user.id && !user._id) {
+        user._id = user.id;
+      }
+    }
+    
     const fetchRecipe = async () => {
       try {
-        const recipeRes = await axios.get(`${API_URL}/recipes/${id}`);
-        setRecipe(recipeRes.data);
+        const response = await fetch(`${API_URL}/recipes/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
+        if (!response.ok) {
+          throw new Error('Failed to fetch recipe');
+        }
+        
+        const data = await response.json();
+        
+        // Normalize author data to ensure consistent ID formats
+        let normalizedAuthor = data.author;
+        if (typeof normalizedAuthor === 'object') {
+          normalizedAuthor = {
+            ...normalizedAuthor,
+            id: normalizedAuthor._id || normalizedAuthor.id,
+            _id: normalizedAuthor._id || normalizedAuthor.id,
+          };
+        }
+        
+        setRecipe({
+          ...data,
+          likes: data.likes || [], // Ensure likes is initialized as an empty array if undefined
+          author: normalizedAuthor
+        });
+        
+        // Log the author details for debugging
+        console.log('Author data:', normalizedAuthor);
+        console.log('Current user:', user);
+        
+        // Check if user has liked the recipe
         if (user) {
-          // Check if user has liked the recipe
-          const likes = recipeRes.data.likes || [];
-          setIsLiked(likes.some(likeId => likeId === user._id));
+          const likeResponse = await fetch(`${API_URL}/recipes/${id}/like`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (likeResponse.ok) {
+            const likeData = await likeResponse.json();
+            setIsLiked(likeData.liked);
+          }
+        }
+        
+        // Check if recipe is bookmarked
+        if (user) {
+          try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+              console.warn('No token found for bookmark check');
+              return;
+            }
+            
+            const bookmarksResponse = await fetch(`${API_URL}/recipes/user/bookmarks`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (bookmarksResponse.ok) {
+              const bookmarkedRecipes = await bookmarksResponse.json();
+              setIsBookmarked(bookmarkedRecipes.some(recipe => recipe._id === id));
+            } else {
+              console.error('Failed to fetch bookmarks:', await bookmarksResponse.text());
+            }
+          } catch (error) {
+            console.error('Error checking bookmark status:', error);
+          }
         }
 
         // Fetch comments if they exist
-        if (recipeRes.data.comments && recipeRes.data.comments.length > 0) {
-          setComments(recipeRes.data.comments);
+        if (data.comments && data.comments.length > 0) {
+          setComments(data.comments);
         }
-      } catch (err) {
-        console.error('Error fetching recipe:', err);
-        setError(err.response?.data?.message || 'Failed to load recipe');
+      } catch (error) {
+        console.error('Error fetching recipe:', error);
+        setError('Failed to load recipe. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -74,24 +149,27 @@ const RecipeDetails = () => {
     }
 
     try {
-      const response = await axios.post(
-        `${API_URL}/recipes/${id}/like`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+      const response = await fetch(`${API_URL}/recipes/${id}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      );
+      });
 
-      setIsLiked(response.data.isLiked);
+      if (!response.ok) {
+        throw new Error('Failed to toggle like');
+      }
+
+      const data = await response.json();
+      setIsLiked(data.isLiked);
       setRecipe(prev => ({
         ...prev,
-        likes: response.data.likes || []
+        likes: data.isLiked 
+          ? [...(prev.likes || []), user._id]
+          : (prev.likes || []).filter(id => id !== user._id)
       }));
-    } catch (err) {
-      console.error('Error toggling like:', err);
-      setError('Failed to update like status');
+    } catch (error) {
+      console.error('Error toggling like:', error);
     }
   };
 
@@ -102,20 +180,33 @@ const RecipeDetails = () => {
     }
 
     try {
-      const response = await axios.post(
-        `${API_URL}/recipes/${id}/bookmark`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
 
-      setIsBookmarked(response.data.isBookmarked);
-    } catch (err) {
-      console.error('Error toggling bookmark:', err);
-      setError('Failed to update bookmark status');
+      const response = await fetch(`${API_URL}/recipes/${id}/bookmark`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Bookmark toggle failed:', errorText);
+        throw new Error('Failed to toggle bookmark');
+      }
+
+      const data = await response.json();
+      setIsBookmarked(data.isBookmarked);
+
+      // Dispatch the fetchSavedRecipes action to update the Redux store
+      dispatch(fetchSavedRecipes());
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
     }
   };
 
@@ -221,7 +312,21 @@ const RecipeDetails = () => {
     return <div className={styles.notFound}>Recipe not found</div>;
   }
 
-  const isAuthor = user && recipe.author?._id === user._id;
+  // Add debug info for author check
+  const authorId = recipe.author?._id?.toString() || recipe.author?.id?.toString() || recipe.author?.toString();
+  const userId = user?._id?.toString() || user?.id?.toString();
+  console.log('Author comparison:', { 
+    authorId, 
+    userId,
+    match: authorId === userId,
+    authorType: typeof recipe.author,
+    userType: typeof user
+  });
+
+  // Simplified isAuthor check using string comparison
+  const isAuthor = user && recipe.author && authorId === userId;
+
+  console.log('isAuthor result:', isAuthor);
 
   return (
     <div className={styles.recipeDetailsContainer}>
@@ -263,24 +368,26 @@ const RecipeDetails = () => {
             {isBookmarked ? <FaBookmark /> : <FaRegBookmark />}
           </button>
           
+          {/* Show edit button if user is author */}
           {isAuthor && (
-            <>
-              <button 
-                className={styles.actionButton} 
-                onClick={() => navigate(`/create?edit=${id}`)}
-                aria-label="Edit recipe"
-              >
-                <FaEdit />
-              </button>
-              
-              <button 
-                className={`${styles.actionButton} ${styles.deleteButton}`} 
-                onClick={handleDeleteRecipe}
-                aria-label="Delete recipe"
-              >
-                <FaTrash />
-              </button>
-            </>
+            <button 
+              className={styles.actionButton} 
+              onClick={() => navigate(`/create?edit=${id}`)}
+              aria-label="Edit recipe"
+            >
+              <FaEdit />
+            </button>
+          )}
+          
+          {/* Show delete button if user is author */}
+          {isAuthor && (
+            <button 
+              className={`${styles.actionButton} ${styles.deleteButton}`} 
+              onClick={handleDeleteRecipe}
+              aria-label="Delete recipe"
+            >
+              <FaTrash />
+            </button>
           )}
         </div>
       </div>
@@ -424,4 +531,4 @@ const RecipeDetails = () => {
   );
 };
 
-export default RecipeDetails; 
+export default RecipeDetails;

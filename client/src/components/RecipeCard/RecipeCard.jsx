@@ -12,6 +12,7 @@ import { fetchRecipes } from '../../store/recipesSlice';
 
 const RecipeCard = ({ 
   id, 
+  _id,
   title, 
   imageUrl, 
   image,
@@ -31,9 +32,30 @@ const RecipeCard = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const authorName = typeof author === 'object' ? author.username : author;
-  const isAuthor = typeof author === 'object' && user && author.id === user.id;
-  const displayTags = tags.slice(0, 3);
+  // Ensure we have a valid ID
+  const recipeId = id || _id;
+
+  // Ensure title is a string
+  const safeTitle = typeof title === 'string' ? title : 'Untitled Recipe';
+
+  // Ensure tags is an array
+  const safeTags = Array.isArray(tags) ? tags : [];
+  
+  // Handle different author formats
+  let authorName = '';
+  let authorId = '';
+  if (typeof author === 'object' && author !== null) {
+    authorName = author.username || 'Unknown';
+    authorId = author._id || author.id;
+  } else if (typeof author === 'string') {
+    authorName = author || 'Unknown';
+  }
+
+  // Check if user is the author of this recipe
+  const isAuthor = user && authorId && 
+    (authorId === user._id || authorId === user.id);
+
+  const displayTags = safeTags.slice(0, 3);
   const displayCookTime = typeof cookTime === 'number' ? `${cookTime} mins` : cookTime;
 
   const getImageUrl = () => {
@@ -59,7 +81,7 @@ const RecipeCard = ({
     }
 
     try {
-      await axios.post(`${API_URL}/recipes/${id}/like`, {}, {
+      await axios.post(`${API_URL}/recipes/${recipeId}/like`, {}, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -83,7 +105,7 @@ const RecipeCard = ({
     setIsDeleting(true);
     
     try {
-      await axios.delete(`${API_URL}/recipes/${id}`, {
+      await axios.delete(`${API_URL}/recipes/${recipeId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -99,15 +121,15 @@ const RecipeCard = ({
   const handleEdit = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/create?edit=${id}`);
+    navigate(`/create?edit=${recipeId}`);
   };
 
   return (
-    <Link to={`/recipe/${id}`} className={styles.card}>
+    <Link to={`/recipe/${recipeId}`} className={styles.card}>
       <div className={styles.imageContainer}>
         <img 
           src={getImageUrl()}
-          alt={title}
+          alt={safeTitle}
           onError={handleImageError}
           loading="lazy"
           className={styles.recipeImage}
@@ -123,29 +145,29 @@ const RecipeCard = ({
           </button>
           
           {isAuthor && (
-            <>
-              <button 
-                className={`${styles.actionButton} ${styles.editButton}`}
-                onClick={handleEdit}
-                aria-label="Edit recipe"
-              >
-                <FaPencilAlt />
-              </button>
-              
-              <button 
-                className={`${styles.actionButton} ${styles.deleteButton}`}
-                onClick={handleDelete}
-                disabled={isDeleting}
-                aria-label="Delete recipe"
-              >
-                <FaTrash />
-              </button>
-            </>
+            <button 
+              className={`${styles.actionButton} ${styles.editButton}`}
+              onClick={handleEdit}
+              aria-label="Edit recipe"
+            >
+              <FaPencilAlt />
+            </button>
+          )}
+          
+          {isAuthor && (
+            <button 
+              className={`${styles.actionButton} ${styles.deleteButton}`}
+              onClick={handleDelete}
+              disabled={isDeleting}
+              aria-label="Delete recipe"
+            >
+              <FaTrash />
+            </button>
           )}
         </div>
       </div>
       <div className={styles.content}>
-        <h3 className={styles.title}>{title}</h3>
+        <h3 className={styles.title}>{safeTitle}</h3>
         <div className={styles.meta}>
           <div className={styles.rating}>
             <FaStar className={styles.icon} />
@@ -176,8 +198,8 @@ const RecipeCard = ({
                 {tag}
               </span>
             ))}
-            {tags.length > 3 && (
-              <span className={styles.moreTag}>+{tags.length - 3}</span>
+            {safeTags.length > 3 && (
+              <span className={styles.moreTag}>+{safeTags.length - 3}</span>
             )}
           </div>
         )}
@@ -187,7 +209,8 @@ const RecipeCard = ({
 };
 
 RecipeCard.propTypes = {
-  id: PropTypes.string.isRequired,
+  id: PropTypes.string,
+  _id: PropTypes.string,
   title: PropTypes.string.isRequired,
   imageUrl: PropTypes.string,
   image: PropTypes.string,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import RecipeCard from '../../components/RecipeCard/RecipeCard';
 import Button from '../../components/Button/Button';
@@ -8,15 +8,19 @@ import styles from './UserDashboard.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { FaCamera, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import { fetchSavedRecipes } from '../../store/recipesSlice';
 
 const UserDashboard = () => {
   const { user, updateProfile, updatePassword, uploadProfilePicture } = useAuth();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const dispatch = useDispatch();
 
   const recipes = useSelector(state => state.recipes.recipes);
   const favorites = useSelector(state => state.recipes.favorites);
   const favoriteRecipes = recipes.filter(recipe => favorites.includes(recipe.id));
+  const savedRecipes = useSelector(state => state.recipes.savedRecipes);
+  const isLoading = useSelector(state => state.recipes.loading);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -72,7 +76,10 @@ const UserDashboard = () => {
       }
     });
     setPicturePreview(user?.profilePicture || null);
-  }, [user, navigate]);
+    
+    // Fetch saved recipes when component mounts
+    dispatch(fetchSavedRecipes());
+  }, [user, navigate, dispatch]);
 
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
@@ -650,14 +657,27 @@ const UserDashboard = () => {
       {/* Saved Recipes Section */}
       <section className={styles.recipesSection}>
         <h2 className={styles.sectionTitle}>Your Saved Recipes</h2>
-        {favoriteRecipes.length > 0 ? (
+        {isLoading ? (
+          <div className={styles.loading}>Loading your saved recipes...</div>
+        ) : savedRecipes.length > 0 ? (
           <div className={styles.recipesGrid}>
-            {favoriteRecipes.map(recipe => (
-              <RecipeCard key={recipe.id} {...recipe} />
+            {savedRecipes.map(recipe => (
+              <RecipeCard 
+                key={recipe._id || recipe.id} 
+                id={recipe._id || recipe.id}
+                title={recipe.title}
+                imageUrl={recipe.imageUrl || recipe.image}
+                rating={recipe.averageRating || recipe.rating || 0}
+                cookTime={recipe.cookTime || 0}
+                author={recipe.author}
+                tags={recipe.tags || []}
+              />
             ))}
           </div>
         ) : (
-          <p className={styles.noRecipes}>You haven't saved any recipes yet.</p>
+          <p className={styles.noRecipes}>
+            You haven't saved any recipes yet. Browse recipes and click the bookmark icon to save them here.
+          </p>
         )}
       </section>
     </div>

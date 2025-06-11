@@ -4,6 +4,7 @@ import { API_URL } from '../config';
 const initialState = {
   recipes: [],
   favorites: [],
+  savedRecipes: [],
   loading: false,
   error: null,
   comments: {} // Store comments by recipe ID
@@ -142,6 +143,53 @@ export const addRecipe = createAsyncThunk(
   }
 );
 
+export const fetchSavedRecipes = createAsyncThunk(
+  'recipes/fetchSavedRecipes',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return rejectWithValue('No authentication token found');
+      }
+      
+      const response = await fetch(`${API_URL}/recipes/user/bookmarks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `Failed to fetch saved recipes: ${response.status}`;
+        console.error(errorMessage);
+        return rejectWithValue(errorMessage);
+      }
+      
+      const data = await response.json();
+      
+      return data.map(recipe => ({
+        ...recipe,
+        id: recipe._id || recipe.id,
+        title: recipe.title || 'Untitled Recipe',
+        image: recipe.image || recipe.imageUrl || '',
+        imageUrl: recipe.imageUrl || recipe.image || '',
+        rating: recipe.rating || 0,
+        cookTime: recipe.cookTime || 0,
+        tags: Array.isArray(recipe.tags) ? recipe.tags : [],
+        author: recipe.author 
+          ? {
+              ...recipe.author,
+              id: recipe.author._id || recipe.author.id
+            }
+          : { username: 'Unknown' }
+      }));
+    } catch (error) {
+      console.error('Error fetching saved recipes:', error);
+      return rejectWithValue(error.message || 'An unexpected error occurred');
+    }
+  }
+);
+
 const recipesSlice = createSlice({
   name: 'recipes',
   initialState,
@@ -218,6 +266,19 @@ const recipesSlice = createSlice({
         state.recipes.push(action.payload);
       })
       .addCase(addRecipe.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch saved recipes
+      .addCase(fetchSavedRecipes.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSavedRecipes.fulfilled, (state, action) => {
+        state.loading = false;
+        state.savedRecipes = action.payload;
+      })
+      .addCase(fetchSavedRecipes.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

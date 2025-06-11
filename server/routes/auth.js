@@ -211,10 +211,26 @@ router.post('/profile-picture', auth, upload.single('image'), asyncHandler(async
       return res.status(404).json({ message: 'User not found' });
     }
     
+    // Format the user object consistently
+    const userData = {
+      id: user._id,
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      profilePicture: result.secure_url,
+      bio: user.bio,
+      dietaryPreferences: user.dietaryPreferences,
+      cookingSkillLevel: user.cookingSkillLevel,
+      favoriteCuisines: user.favoriteCuisines,
+      socialMediaLinks: user.socialMediaLinks,
+      savedRecipes: user.savedRecipes,
+      likedRecipes: user.likedRecipes
+    };
+    
     res.json({ 
       message: 'Profile picture uploaded successfully',
       profilePicture: result.secure_url,
-      user
+      user: userData
     });
   } catch (err) {
     console.error('Error uploading profile picture:', err);
@@ -252,6 +268,35 @@ router.post('/change-password', auth, asyncHandler(async (req, res) => {
   } catch (err) {
     console.error('Password change error:', err);
     res.status(500).json({ message: err.message || 'Error changing password' });
+  }
+}));
+
+// Validate token
+router.get('/validate-token', auth, asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({ 
+      user: { 
+        id: user._id, 
+        username: user.username, 
+        email: user.email,
+        bio: user.bio,
+        profilePicture: user.profilePicture,
+        dietaryPreferences: user.dietaryPreferences,
+        cookingSkillLevel: user.cookingSkillLevel,
+        favoriteCuisines: user.favoriteCuisines,
+        socialMediaLinks: user.socialMediaLinks,
+        savedRecipes: user.savedRecipes,
+        likedRecipes: user.likedRecipes
+      } 
+    });
+  } catch (error) {
+    console.error('Token validation error:', error);
+    res.status(401).json({ message: 'Invalid token' });
   }
 }));
 

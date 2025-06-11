@@ -20,11 +20,46 @@ const Navbar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userInitials, setUserInitials] = useState('');
 
   useEffect(() => {
     // Close mobile menu when route changes
     setIsMobileMenuOpen(false);
   }, [location]);
+
+  useEffect(() => {
+    // Update user initials when user changes
+    if (user) {
+      setUserInitials(getInitials(user.username));
+      console.log('Navbar: User updated', { 
+        username: user.username, 
+        profilePicture: user.profilePicture 
+      });
+    }
+  }, [user]);
+
+  // Listen for user changes from localStorage
+  useEffect(() => {
+    const handleUserChanged = () => {
+      try {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          console.log('Navbar: User changed event detected', {
+            username: parsedUser.username,
+            profilePicture: parsedUser.profilePicture
+          });
+          // Force a refresh of the component
+          setUserInitials(getInitials(parsedUser.username));
+        }
+      } catch (error) {
+        console.error('Error handling user changed event:', error);
+      }
+    };
+    
+    window.addEventListener('userChanged', handleUserChanged);
+    return () => window.removeEventListener('userChanged', handleUserChanged);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -108,21 +143,41 @@ const Navbar = () => {
             {user ? (
               <>
                 <Link to="/dashboard" className={styles.profileIconLink}>
-                  <div className={styles.avatar} style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: isDarkMode ? '#fff' : 'var(--primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 18,
-                    color: isDarkMode ? 'var(--primary)' : '#fff',
-                    fontWeight: 700,
-                    border: isDarkMode ? '2px solid var(--primary)' : 'none'
-                  }}>
-                    {getInitials(user.name)}
-                  </div>
+                  {user && user.profilePicture ? (
+                    <img 
+                      src={user.profilePicture} 
+                      alt={user.username || 'Profile'} 
+                      className={styles.profileImage}
+                      onError={(e) => {
+                        console.error('Profile image failed to load:', e);
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: isDarkMode ? '2px solid var(--primary)' : 'none'
+                      }}
+                    />
+                  ) : (
+                    <div className={styles.avatar} style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: isDarkMode ? '#fff' : 'var(--primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 18,
+                      color: isDarkMode ? 'var(--primary)' : '#fff',
+                      fontWeight: 700,
+                      border: isDarkMode ? '2px solid var(--primary)' : 'none'
+                    }}>
+                      {userInitials}
+                    </div>
+                  )}
                 </Link>
                 <Button variant="outline" onClick={handleLogout} className={styles.desktopOnly}>Logout</Button>
               </>

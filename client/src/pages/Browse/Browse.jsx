@@ -41,12 +41,32 @@ const Browse = () => {
     return recipes.filter(recipe => {
       if (!recipe) return false;
 
+      // Safely get lowercase string
+      const safeToLowerCase = (value) => {
+        if (typeof value === 'string') {
+          return value.toLowerCase();
+        }
+        return '';
+      };
+      
+      // Safe search term
+      const searchTermLower = safeToLowerCase(searchParams.searchTerm);
+
       // Search term filter (by title, description, or tags)
       const matchesSearch = !searchParams.searchTerm || 
-        (recipe.title && recipe.title.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
-        (recipe.description && recipe.description.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
-        (recipe.tags && recipe.tags.some(tag => tag.toLowerCase().includes(searchParams.searchTerm.toLowerCase()))) ||
-        (recipe.ingredients && recipe.ingredients.some(ing => ing.toLowerCase().includes(searchParams.searchTerm.toLowerCase())));
+        (recipe.title && safeToLowerCase(recipe.title).includes(searchTermLower)) ||
+        (recipe.description && safeToLowerCase(recipe.description).includes(searchTermLower)) ||
+        (recipe.tags && Array.isArray(recipe.tags) && recipe.tags.some(tag => 
+          tag && safeToLowerCase(tag).includes(searchTermLower)
+        )) ||
+        (recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.some(ing => {
+          if (typeof ing === 'string') {
+            return safeToLowerCase(ing).includes(searchTermLower);
+          } else if (ing && typeof ing === 'object' && ing.name) {
+            return safeToLowerCase(ing.name).includes(searchTermLower);
+          }
+          return false;
+        }));
 
       // Difficulty filter
       const matchesDifficulty = !searchParams.filters.difficulty || 
@@ -60,11 +80,14 @@ const Browse = () => {
 
       // Cuisine filter (from tags)
       const matchesCuisine = !searchParams.filters.cuisine || 
-        (recipe.tags && recipe.tags.includes(searchParams.filters.cuisine));
+        (recipe.tags && Array.isArray(recipe.tags) && recipe.tags.includes(searchParams.filters.cuisine));
       
       // Dietary preferences filter (from tags)
-      const matchesDietary = searchParams.filters.dietary.length === 0 || 
-        (recipe.tags && searchParams.filters.dietary.every(pref => recipe.tags.includes(pref)));
+      const matchesDietary = !searchParams.filters.dietary || 
+        !Array.isArray(searchParams.filters.dietary) || 
+        searchParams.filters.dietary.length === 0 || 
+        (recipe.tags && Array.isArray(recipe.tags) && 
+         searchParams.filters.dietary.every(pref => recipe.tags.includes(pref)));
 
       return matchesSearch && matchesDifficulty && matchesCookTime && matchesCuisine && matchesDietary;
     });
