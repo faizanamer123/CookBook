@@ -1,0 +1,41 @@
+.container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+h2 {
+  color: #444;
+  margin: 1.5rem 0 1rem;
+}
+
+section {
+  margin-bottom: 2rem;
+}
+
+ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+}
+
+li {
+  margin: 0.5rem 0;
+}
+
+p {
+  line-height: 1.6;
+  color: #666;
+} 
