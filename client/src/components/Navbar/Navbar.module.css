@@ -265,4 +265,115 @@
   .desktopOnly {
     display: none;
   }
+}
+
+.legalLinks {
+  display: flex;
+  gap: 1.5rem;
+  margin-left: 2rem;
+  align-items: center;
+}
+
+.legalLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  border: 1px solid transparent;
+}
+
+.legalLink svg {
+  color: var(--primary);
+  transition: transform 0.2s ease;
+}
+
+.legalLink:hover {
+  color: var(--primary);
+  background: var(--background-hover);
+  border-color: var(--border-color);
+}
+
+.legalLink:hover svg {
+  transform: scale(1.1);
+}
+
+.legalLink:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 768px) {
+  .legalLinks {
+    display: none;
+  }
+}
+
+.mobileLegalLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.legalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legalLabel {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  padding: 0 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.legalButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+}
+
+.legalButton svg {
+  color: var(--primary);
+  transition: transform 0.2s ease;
+}
+
+.legalButton:hover {
+  background: var(--background-hover);
+  transform: translateY(-1px);
+  border-color: var(--primary);
+}
+
+.legalButton:hover svg {
+  transform: scale(1.1);
+}
+
+.legalButton:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .legalLinks {
+    display: none;
+  }
 } 

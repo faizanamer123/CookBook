@@ -6,6 +6,7 @@ import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar/Navbar';
 import './styles/global.css';
 
+const Landing = lazy(() => import('./pages/Landing/Landing'));
 const Home = lazy(() => import('./pages/Home/Home'));
 const Browse = lazy(() => import('./pages/Browse/Browse'));
 const CreateRecipe = lazy(() => import('./pages/CreateRecipe/CreateRecipe'));
@@ -45,6 +46,17 @@ function AppRoutes() {
       <main style={{ marginTop: '80px', padding: '1rem' }}>
         <Suspense fallback={<div>Loading...</div>}>
           <Routes>
+            {/* Landing page */}
+            <Route path="/" element={
+              user ? (
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              ) : (
+                <Landing />
+              )
+            } />
+
             {/* Public routes */}
             <Route path="/login" element={
               <PublicRoute>
@@ -61,11 +73,6 @@ function AppRoutes() {
             <Route path="/terms" element={<TermsOfService />} />
 
             {/* Protected routes */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            } />
             <Route path="/browse" element={
               <ProtectedRoute>
                 <Browse />

@@ -21,6 +21,9 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Check if current page is landing page
+  const isLandingPage = location.pathname === '/';
+
   useEffect(() => {
     // Close mobile menu when route changes
     setIsMobileMenuOpen(false);
@@ -78,6 +81,26 @@ const Navbar = () => {
                 />
               </form>
             )}
+            {!user && (location.pathname === '/login' || location.pathname === '/register') && (
+              <div className={styles.legalLinks}>
+                <Link to="/privacy" className={styles.legalLink}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  Privacy
+                </Link>
+                <Link to="/terms" className={styles.legalLink}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  Terms
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className={styles.actions}>
@@ -127,18 +150,20 @@ const Navbar = () => {
                 <Button variant="outline" onClick={handleLogout} className={styles.desktopOnly}>Logout</Button>
               </>
             ) : (
-              <div className={styles.authButtons}>
-                <Link to="/login">
-                  <Button variant="outline">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="primary">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
+              !isLandingPage && (
+                <div className={styles.authButtons}>
+                  <Link to="/login">
+                    <Button variant="outline">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button variant="primary">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
+              )
             )}
 
             <button
@@ -198,18 +223,43 @@ const Navbar = () => {
                 <Button variant="outline" fullWidth onClick={handleLogout}>Logout</Button>
               </>
             ) : (
-               <>
-                 <Link to="/login" onClick={toggleMobileMenu}>
-                   <Button variant="outline" fullWidth>
-                     Login
-                   </Button>
-                 </Link>
-                 <Link to="/register" onClick={toggleMobileMenu}>
-                   <Button variant="primary" fullWidth>
-                     Sign Up
-                   </Button>
-                 </Link>
-               </>
+              !isLandingPage && (
+                <>
+                  <Link to="/login" onClick={toggleMobileMenu}>
+                    <Button variant="outline" fullWidth>
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/register" onClick={toggleMobileMenu}>
+                    <Button variant="primary" fullWidth>
+                      Sign Up
+                    </Button>
+                  </Link>
+                  {(location.pathname === '/login' || location.pathname === '/register') && (
+                    <div className={styles.mobileLegalLinks}>
+                      <div className={styles.legalSection}>
+                        <span className={styles.legalLabel}>Legal</span>
+                        <Link to="/privacy" onClick={toggleMobileMenu} className={styles.legalButton}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                          </svg>
+                          Privacy Policy
+                        </Link>
+                        <Link to="/terms" onClick={toggleMobileMenu} className={styles.legalButton}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                          </svg>
+                          Terms of Service
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
             )}
           </div>
         </div>
