@@ -95,6 +95,16 @@
   color: white;
 }
 
+.editButton {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary, #6c5ce7);
+}
+
+.editButton:hover {
+  background: var(--primary, #6c5ce7);
+  color: white;
+}
+
 .content {
   padding: 16px;
 }

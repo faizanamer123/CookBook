@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addRecipe } from '../../store/recipesSlice';
 import Button from '../../components/Button/Button';
 import styles from './CreateRecipe.module.css';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import axios from 'axios';
 
 const CreateRecipe = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [recipeId, setRecipeId] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -32,7 +36,65 @@ const CreateRecipe = () => {
 
   useEffect(() => {
     if (!user) navigate('/login');
-  }, [user, navigate]);
+    
+    // Check if we're in edit mode by looking for the edit query parameter
+    const params = new URLSearchParams(location.search);
+    const editId = params.get('edit');
+    
+    if (editId) {
+      setIsEditMode(true);
+      setRecipeId(editId);
+      fetchRecipeForEdit(editId);
+    }
+  }, [user, navigate, location]);
+
+  // Fetch the recipe data for editing
+  const fetchRecipeForEdit = async (id) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/recipes/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      const recipe = response.data;
+      
+      // Check if the current user is the author
+      if (recipe.author._id !== user.id && recipe.author.id !== user.id) {
+        setError("You don't have permission to edit this recipe");
+        navigate('/');
+        return;
+      }
+      
+      // Format ingredients for the form
+      const formattedIngredients = recipe.ingredients.map(ing => 
+        `${ing.amount} ${ing.unit} ${ing.name}`.trim()
+      );
+      
+      setFormData({
+        title: recipe.title || '',
+        description: recipe.description || '',
+        image: null, // We'll keep the existing image unless changed
+        cookTime: recipe.cookTime || '',
+        servings: recipe.servings || '',
+        difficulty: recipe.difficulty || 'Easy',
+        ingredients: formattedIngredients.length > 0 ? formattedIngredients : [''],
+        instructions: recipe.instructions.length > 0 ? recipe.instructions : [''],
+        tags: recipe.tags || []
+      });
+      
+      if (recipe.image || recipe.imageUrl) {
+        setImagePreview(recipe.image || recipe.imageUrl);
+      }
+      
+    } catch (err) {
+      console.error('Error fetching recipe for edit:', err);
+      setError('Could not load the recipe for editing');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Validate field on blur
   const validateField = (name, value) => {
@@ -194,9 +256,11 @@ const CreateRecipe = () => {
       }
     });
 
-    if (!data.image) {
+    // Only require image for new recipes, not when editing (if we already have an image preview)
+    if (!data.image && !isEditMode && !imagePreview) {
       newErrors.image = 'Image is required';
     }
+    
     if (data.ingredients.some(ing => !ing.trim())) {
       newErrors.ingredients = 'All ingredients must be filled';
     }
@@ -225,13 +289,18 @@ const CreateRecipe = () => {
     }
 
     try {
-      console.log('Starting recipe creation...');
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title.trim());
       formDataToSend.append('description', formData.description.trim());
       
+      // Handle image data
       if (formData.image) {
+        // If we have a new image uploaded, include it
         formDataToSend.append('image', formData.image);
+      } else if (isEditMode && imagePreview) {
+        // If we're in edit mode and have a preview but no new upload,
+        // pass the existing image URL
+        formDataToSend.append('existingImage', imagePreview);
       }
       
       // Convert string ingredients to the required format with name, amount, and unit
@@ -260,39 +329,50 @@ const CreateRecipe = () => {
       formDataToSend.append('servings', formData.servings);
       formDataToSend.append('difficulty', formData.difficulty);
 
-      const response = await fetch(`${API_URL}/recipes`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formDataToSend
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create recipe');
+      let response;
+      if (isEditMode && recipeId) {
+        // Update existing recipe
+        response = await axios.put(`${API_URL}/recipes/${recipeId}`, formDataToSend, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } else {
+        // Create new recipe
+        response = await axios.post(`${API_URL}/recipes`, formDataToSend, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
       }
 
-      const newRecipe = await response.json();
-      console.log('Recipe created successfully:', newRecipe);
+      const newRecipe = response.data;
+      console.log(`Recipe ${isEditMode ? 'updated' : 'created'} successfully:`, newRecipe);
       
-      // Dispatch the new recipe to Redux store
+      // Dispatch the new/updated recipe to Redux store
       dispatch(addRecipe(newRecipe));
       
       // Navigate to the recipe detail page
-      navigate(`/recipe/${newRecipe._id}`);
+      navigate(`/recipe/${newRecipe._id || newRecipe.id}`);
     } catch (error) {
-      console.error('Error creating recipe:', error);
-      setError(error.message || 'Failed to create recipe');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} recipe:`, error);
+      setError(error.message || `Failed to ${isEditMode ? 'update' : 'create'} recipe`);
       setLoading(false);
     }
   };
 
+  // Update page title based on mode
+  const pageTitle = isEditMode ? 'Edit Recipe' : 'Create New Recipe';
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Create New Recipe</h1>
-        <p className={styles.subtitle}>Share your culinary masterpiece with the world!</p>
+        <h1 className={styles.title}>{pageTitle}</h1>
+        <p className={styles.subtitle}>
+          {isEditMode 
+            ? 'Update your culinary masterpiece' 
+            : 'Share your culinary masterpiece with the world!'}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className={styles.form}>

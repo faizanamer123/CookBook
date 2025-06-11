@@ -204,41 +204,118 @@ router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => 
 
 // Update recipe
 router.put('/:id', auth, upload.single('image'), asyncHandler(async (req, res) => {
-  const recipe = await Recipe.findById(req.params.id);
-  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
-  if (recipe.author.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' });
-
-  let imageUrl = recipe.image || recipe.imageUrl;
-  if (req.file) {
-    try {
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-      
-      const result = await cloudinary.uploader.upload(dataURI, {
-        resource_type: 'image',
-        folder: 'cookbook',
-        timeout: 60000
-      });
-      
-      imageUrl = result.secure_url;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      return res.status(500).json({ 
-        message: 'Failed to upload image',
-        error: error.message 
-      });
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+    
+    // Check if user is the author
+    if (recipe.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this recipe' });
     }
+
+    // Handle image upload if a new image is provided
+    let imageUrl = recipe.image || recipe.imageUrl;
+    if (req.file) {
+      try {
+        const b64 = Buffer.from(req.file.buffer).toString('base64');
+        const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+        
+        const result = await cloudinary.uploader.upload(dataURI, {
+          resource_type: 'image',
+          folder: 'cookbook',
+          timeout: 60000,
+          transformation: [
+            { width: 1000, height: 1000, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
+        });
+        
+        imageUrl = result.secure_url;
+      } catch (error) {
+        console.error('Image upload error:', error);
+        return res.status(500).json({ 
+          message: 'Failed to upload image',
+          error: error.message 
+        });
+      }
+    } else if (req.body.existingImage) {
+      // If no new file but existing image URL is provided, use that
+      imageUrl = req.body.existingImage;
+    }
+
+    // Parse JSON fields
+    let parsedIngredients, parsedTags, parsedInstructions;
+    try {
+      if (req.body.ingredients) {
+        parsedIngredients = JSON.parse(req.body.ingredients);
+      }
+      if (req.body.tags) {
+        parsedTags = JSON.parse(req.body.tags);
+      }
+      if (req.body.instructions) {
+        parsedInstructions = JSON.parse(req.body.instructions);
+      }
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      return res.status(400).json({ message: 'Invalid ingredients, instructions, or tags format' });
+    }
+
+    // Update recipe fields
+    const updates = {
+      title: req.body.title || recipe.title,
+      description: req.body.description || recipe.description,
+      image: imageUrl,
+      imageUrl: imageUrl,
+      cookTime: req.body.cookTime ? parseInt(req.body.cookTime) : recipe.cookTime,
+      servings: req.body.servings ? parseInt(req.body.servings) : recipe.servings,
+      difficulty: req.body.difficulty || recipe.difficulty,
+      cuisineType: req.body.cuisineType || recipe.cuisineType
+    };
+
+    // Only update arrays if they were provided
+    if (parsedIngredients) {
+      updates.ingredients = parsedIngredients;
+    }
+    if (parsedInstructions) {
+      updates.instructions = parsedInstructions;
+    }
+    if (parsedTags) {
+      updates.tags = parsedTags;
+    }
+
+    // Update the recipe
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    ).populate('author', 'username email profilePicture');
+
+    if (!updatedRecipe) {
+      return res.status(404).json({ message: 'Recipe not found after update' });
+    }
+
+    // Format the response
+    const responseRecipe = {
+      ...updatedRecipe.toObject(),
+      id: updatedRecipe._id.toString(),
+      _id: updatedRecipe._id.toString(),
+      author: {
+        id: updatedRecipe.author._id.toString(),
+        _id: updatedRecipe.author._id.toString(),
+        username: updatedRecipe.author.username,
+        email: updatedRecipe.author.email,
+        profilePicture: updatedRecipe.author.profilePicture
+      }
+    };
+
+    res.json(responseRecipe);
+  } catch (error) {
+    console.error('Recipe update error:', error);
+    res.status(500).json({ 
+      message: 'Failed to update recipe',
+      error: error.message 
+    });
   }
-
-  recipe.title = req.body.title || recipe.title;
-  recipe.ingredients = req.body.ingredients ? JSON.parse(req.body.ingredients) : recipe.ingredients;
-  recipe.steps = req.body.steps || recipe.steps;
-  recipe.tags = req.body.tags ? JSON.parse(req.body.tags) : recipe.tags;
-  recipe.image = imageUrl;
-  recipe.imageUrl = imageUrl; // Set both fields for consistency
-
-  await recipe.save();
-  res.json(recipe);
 }));
 
 // Delete recipe
