@@ -227,8 +227,12 @@ const CreateRecipe = () => {
     try {
       console.log('Starting recipe creation...');
       const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
+      formDataToSend.append('title', formData.title.trim());
+      formDataToSend.append('description', formData.description.trim());
+      
+      if (formData.image) {
+        formDataToSend.append('image', formData.image);
+      }
       
       // Convert string ingredients to the required format with name, amount, and unit
       const formattedIngredients = formData.ingredients
@@ -248,74 +252,38 @@ const CreateRecipe = () => {
             unit: unit
           };
         });
-      
+
       formDataToSend.append('ingredients', JSON.stringify(formattedIngredients));
-      formDataToSend.append('instructions', JSON.stringify(formData.instructions.filter(i => i.trim())));
+      formDataToSend.append('instructions', JSON.stringify(formData.instructions.filter(inst => inst.trim())));
       formDataToSend.append('tags', JSON.stringify(formData.tags));
       formDataToSend.append('cookTime', formData.cookTime);
       formDataToSend.append('servings', formData.servings);
       formDataToSend.append('difficulty', formData.difficulty);
-      
-      if (formData.image) {
-        console.log('Adding image to form data...');
-        // Check image size
-        if (formData.image.size > 5 * 1024 * 1024) { // 5MB
-          throw new Error('Image size must be less than 5MB');
-        }
-        formDataToSend.append('image', formData.image);
-      }
-
-      console.log('Sending request to server...');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
 
       const response = await fetch(`${API_URL}/recipes`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: formDataToSend,
-        signal: controller.signal
+        body: formDataToSend
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Server error response:', errorData);
         throw new Error(errorData.message || 'Failed to create recipe');
       }
 
-      const data = await response.json();
-      console.log('Recipe created successfully:', data);
+      const newRecipe = await response.json();
+      console.log('Recipe created successfully:', newRecipe);
       
-      // Format the recipe data before dispatching
-      const formattedRecipe = {
-        ...data,
-        author: {
-          id: data.author.id,
-          username: data.author.username,
-          email: data.author.email
-        }
-      };
+      // Dispatch the new recipe to Redux store
+      dispatch(addRecipe(newRecipe));
       
-      // Dispatch the new recipe to the store
-      dispatch(addRecipe(formattedRecipe));
-      
-      // Navigate to browse page
-      navigate('/browse');
+      // Navigate to the recipe detail page
+      navigate(`/recipe/${newRecipe._id}`);
     } catch (error) {
       console.error('Error creating recipe:', error);
-      if (error.name === 'AbortError') {
-        setError('Request timed out. The server is taking too long to respond. Please try again with a smaller image or check your internet connection.');
-      } else if (error.message.includes('Failed to fetch')) {
-        setError('Unable to connect to the server. Please check if the server is running and try again.');
-      } else if (error.message.includes('Image size')) {
-        setError(error.message);
-      } else {
-        setError(error.message || 'Error creating recipe. Please try again.');
-      }
-    } finally {
+      setError(error.message || 'Failed to create recipe');
       setLoading(false);
     }
   };

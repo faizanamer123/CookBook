@@ -2,7 +2,7 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const Recipe = require('../models/Recipe');
 const User = require('../models/User');
-const cloudinary = require('cloudinary');
+const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const { auth } = require('../middleware/authMiddleware');
 const mongoose = require('mongoose');
@@ -114,9 +114,10 @@ router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => 
         const result = await cloudinary.uploader.upload(dataURI, {
           resource_type: 'image',
           folder: 'cookbook',
-          timeout: 60000, // 60 second timeout
-          eager: [
-            { width: 1000, height: 1000, crop: 'limit' }
+          timeout: 60000,
+          transformation: [
+            { width: 1000, height: 1000, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
           ]
         });
 
@@ -138,11 +139,13 @@ router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => 
       ingredients: parsedIngredients,
       instructions: parsedInstructions,
       image: imageUrl,
+      imageUrl: imageUrl,
       cookTime: parseInt(cookTime),
       servings: parseInt(servings),
       difficulty,
       author: req.user._id,
-      cuisineType: 'Other'
+      cuisineType: 'Other',
+      tags: parsedTags
     });
 
     const savedRecipe = await recipe.save();
@@ -186,31 +189,39 @@ router.post('/', auth, upload.single('image'), asyncHandler(async (req, res) => 
 }));
 
 // Update recipe
-router.put('/:id', auth, asyncHandler(async (req, res) => {
+router.put('/:id', auth, upload.single('image'), asyncHandler(async (req, res) => {
   const recipe = await Recipe.findById(req.params.id);
   if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
   if (recipe.author.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Not authorized' });
 
-  let imageUrl = recipe.imageUrl;
+  let imageUrl = recipe.image || recipe.imageUrl;
   if (req.file) {
-    const result = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { resource_type: 'image', folder: 'cookbook' },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
-    });
-    imageUrl = result.secure_url;
+    try {
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      
+      const result = await cloudinary.uploader.upload(dataURI, {
+        resource_type: 'image',
+        folder: 'cookbook',
+        timeout: 60000
+      });
+      
+      imageUrl = result.secure_url;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      return res.status(500).json({ 
+        message: 'Failed to upload image',
+        error: error.message 
+      });
+    }
   }
 
   recipe.title = req.body.title || recipe.title;
   recipe.ingredients = req.body.ingredients ? JSON.parse(req.body.ingredients) : recipe.ingredients;
   recipe.steps = req.body.steps || recipe.steps;
   recipe.tags = req.body.tags ? JSON.parse(req.body.tags) : recipe.tags;
-  recipe.imageUrl = imageUrl;
+  recipe.image = imageUrl;
+  recipe.imageUrl = imageUrl; // Set both fields for consistency
 
   await recipe.save();
   res.json(recipe);
@@ -218,31 +229,26 @@ router.put('/:id', auth, asyncHandler(async (req, res) => {
 
 // Delete recipe
 router.delete('/:id', auth, asyncHandler(async (req, res) => {
-  const recipe = await Recipe.findById(req.params.id);
-  
-  if (!recipe) {
-    return res.status(404).json({ message: 'Recipe not found' });
-  }
-  
-  // Check if user is authorized to delete (either author or admin)
-  if (recipe.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Not authorized to delete this recipe' });
-  }
-  
-  // If there's an image, we could delete it from Cloudinary
-  if (recipe.imageUrl && recipe.imageUrl.includes('cloudinary')) {
-    try {
-      const publicId = recipe.imageUrl.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(`cookbook/${publicId}`);
-    } catch (error) {
-      console.error('Error deleting image from Cloudinary:', error);
-      // Continue with recipe deletion even if image deletion fails
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
     }
+
+    // Check if user is the author of the recipe
+    if (recipe.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this recipe' });
+    }
+
+    // Delete the recipe
+    await Recipe.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Recipe deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting recipe:', error);
+    res.status(500).json({ message: 'Failed to delete recipe', error: error.message });
   }
-  
-  await Recipe.deleteOne({ _id: req.params.id });
-  
-  res.json({ message: 'Recipe deleted successfully' });
 }));
 
 // Get comments for a recipe
@@ -259,58 +265,66 @@ router.get('/:id/comments', asyncHandler(async (req, res) => {
   });
 }));
 
-// Add a comment with rating
+// Add a comment to a recipe
 router.post('/:id/comments', auth, asyncHandler(async (req, res) => {
-  const recipeId = req.params.id;
-  const userId = req.user._id;
-  const { text, rating } = req.body;
-  
-  if (!text) {
-    return res.status(400).json({ message: 'Comment text is required' });
+  try {
+    const { text, rating } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({ message: 'Comment text is required' });
+    }
+
+    if (rating && (rating < 0 || rating > 5)) {
+      return res.status(400).json({ message: 'Rating must be between 0 and 5' });
+    }
+
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
+
+    const comment = {
+      author: req.user._id,
+      content: text,
+      rating: rating || 0,
+      createdAt: new Date()
+    };
+
+    recipe.comments.push(comment);
+    
+    // Calculate new average rating
+    const validRatings = recipe.comments.filter(c => c.rating > 0);
+    if (validRatings.length > 0) {
+      const sum = validRatings.reduce((acc, c) => acc + c.rating, 0);
+      recipe.averageRating = Math.round((sum / validRatings.length) * 10) / 10;
+    }
+
+    await recipe.save();
+
+    // Populate the author details for the new comment
+    const populatedRecipe = await Recipe.findById(recipe._id)
+      .populate('comments.author', 'username profilePicture');
+
+    const newComment = populatedRecipe.comments[populatedRecipe.comments.length - 1];
+
+    res.status(201).json({
+      comment: {
+        _id: newComment._id,
+        content: newComment.content,
+        rating: newComment.rating,
+        createdAt: newComment.createdAt,
+        author: {
+          _id: newComment.author._id,
+          username: newComment.author.username,
+          profilePicture: newComment.author.profilePicture
+        }
+      },
+      averageRating: recipe.averageRating
+    });
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    res.status(500).json({ message: 'Failed to add comment', error: error.message });
   }
-  
-  if (rating && (rating < 1 || rating > 5)) {
-    return res.status(400).json({ message: 'Rating must be between 1 and 5' });
-  }
-  
-  const recipe = await Recipe.findById(recipeId);
-  if (!recipe) {
-    return res.status(404).json({ message: 'Recipe not found' });
-  }
-  
-  // Create the comment object
-  const comment = {
-    _id: new mongoose.Types.ObjectId(),
-    author: userId,
-    authorName: req.user.username,
-    text,
-    rating: rating || 0,
-    createdAt: new Date()
-  };
-  
-  // Add the comment to the recipe
-  if (!recipe.comments) {
-    recipe.comments = [];
-  }
-  recipe.comments.push(comment);
-  
-  // Calculate new average rating
-  if (rating) {
-    const validRatings = recipe.comments
-      .filter(c => c.rating && c.rating > 0)
-      .map(c => c.rating);
-      
-    const sum = validRatings.reduce((acc, curr) => acc + curr, 0);
-    recipe.averageRating = validRatings.length > 0 ? sum / validRatings.length : 0;
-  }
-  
-  await recipe.save();
-  
-  res.status(201).json({
-    message: 'Comment added successfully',
-    comment,
-    averageRating: recipe.averageRating
-  });
 }));
 
 // Delete a comment
@@ -336,32 +350,34 @@ router.delete('/:id/comments/:commentId', auth, asyncHandler(async (req, res) =>
   });
 }));
 
-// Toggle like for a recipe
+// Toggle like on a recipe
 router.post('/:id/like', auth, asyncHandler(async (req, res) => {
-  const recipeId = req.params.id;
-  const userId = req.user._id;
-  
-  const recipe = await Recipe.findById(recipeId);
-  if (!recipe) {
-    return res.status(404).json({ message: 'Recipe not found' });
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
+
+    // Check if user has already liked the recipe
+    const likedIndex = recipe.likes.indexOf(req.user.id);
+    
+    if (likedIndex === -1) {
+      // Add like
+      recipe.likes.push(req.user.id);
+    } else {
+      // Remove like
+      recipe.likes.splice(likedIndex, 1);
+    }
+
+    await recipe.save();
+    res.json({ 
+      likes: recipe.likes.length,
+      isLiked: likedIndex === -1
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
-  
-  const isLiked = recipe.likes.includes(userId);
-  
-  if (isLiked) {
-    // Unlike the recipe
-    recipe.likes = recipe.likes.filter(id => id.toString() !== userId.toString());
-  } else {
-    // Like the recipe
-    recipe.likes.push(userId);
-  }
-  
-  await recipe.save();
-  
-  res.json({
-    liked: !isLiked,
-    likeCount: recipe.likes.length
-  });
 }));
 
 // Check if user has liked a recipe
@@ -382,27 +398,39 @@ router.get('/:id/like', auth, asyncHandler(async (req, res) => {
   });
 }));
 
-// Toggle save/bookmark recipe
-router.post('/:id/bookmark', auth, asyncHandler(async (req, res) => {
-  const recipe = await Recipe.findById(req.params.id);
-  if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+// Toggle bookmark on a recipe
+router.post('/:id/bookmark', auth, async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
 
-  const user = await User.findById(req.user._id);
-  const recipeIndex = user.savedRecipes.findIndex(id => 
-    id.toString() === recipe._id.toString());
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-  if (recipeIndex === -1) {
-    user.savedRecipes.push(recipe._id);
-  } else {
-    user.savedRecipes.splice(recipeIndex, 1);
+    const bookmarkIndex = user.savedRecipes.indexOf(recipe._id);
+    
+    if (bookmarkIndex === -1) {
+      // Add bookmark
+      user.savedRecipes.push(recipe._id);
+    } else {
+      // Remove bookmark
+      user.savedRecipes.splice(bookmarkIndex, 1);
+    }
+
+    await user.save();
+    res.json({ 
+      isBookmarked: bookmarkIndex === -1,
+      savedRecipes: user.savedRecipes
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
-
-  await user.save();
-  res.json({ 
-    isBookmarked: recipeIndex === -1,
-    savedRecipes: user.savedRecipes 
-  });
-}));
+});
 
 // Get user's bookmarked recipes
 router.get('/bookmarks', auth, asyncHandler(async (req, res) => {
