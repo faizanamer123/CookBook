@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaStar, FaClock, FaUser, FaHeart, FaRegHeart, FaTrash } from 'react-icons/fa';
+import { FaStar, FaClock, FaUser, FaHeart, FaRegHeart, FaTrash, FaPencilAlt } from 'react-icons/fa';
 import { DEFAULT_IMAGE } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import styles from './RecipeCard.module.css';
@@ -95,6 +95,12 @@ const RecipeCard = ({
       setIsDeleting(false);
     }
   };
+  
+  const handleEdit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/create?edit=${id}`);
+  };
 
   return (
     <Link to={`/recipe/${id}`} className={styles.card}>
@@ -116,15 +122,25 @@ const RecipeCard = ({
             <span>{likes}</span>
           </button>
           
-          {(isAuthor || showDelete) && (
-            <button 
-              className={`${styles.actionButton} ${styles.deleteButton}`}
-              onClick={handleDelete}
-              disabled={isDeleting}
-              aria-label="Delete recipe"
-            >
-              <FaTrash />
-            </button>
+          {isAuthor && (
+            <>
+              <button 
+                className={`${styles.actionButton} ${styles.editButton}`}
+                onClick={handleEdit}
+                aria-label="Edit recipe"
+              >
+                <FaPencilAlt />
+              </button>
+              
+              <button 
+                className={`${styles.actionButton} ${styles.deleteButton}`}
+                onClick={handleDelete}
+                disabled={isDeleting}
+                aria-label="Delete recipe"
+              >
+                <FaTrash />
+              </button>
+            </>
           )}
         </div>
       </div>

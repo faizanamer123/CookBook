@@ -267,7 +267,7 @@ const RecipeDetails = () => {
             <>
               <button 
                 className={styles.actionButton} 
-                onClick={() => navigate(`/recipe/edit/${id}`)}
+                onClick={() => navigate(`/create?edit=${id}`)}
                 aria-label="Edit recipe"
               >
                 <FaEdit />
