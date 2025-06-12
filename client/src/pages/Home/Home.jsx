@@ -40,14 +40,23 @@ const Home = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    fetch(`${API_URL}/recipes`)
-      .then(res => res.json())
-      .then(data => setFeaturedRecipes(data.slice(0, 3)))
-      .catch(err => console.error('Failed to fetch recipes', err));
+    const fetchFeaturedRecipes = async () => {
+      try {
+        const response = await fetch(`${API_URL}/recipes`);
+        const data = await response.json();
+        // Sort by averageRating and get top 3
+        const sortedRecipes = data.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+        setFeaturedRecipes(sortedRecipes.slice(0, 3));
+      } catch (err) {
+        console.error('Failed to fetch recipes', err);
+      }
+    };
+
+    fetchFeaturedRecipes();
   }, []);
 
   // Categories with normalized names
-  const categories = [
+  const mealCategories = [
     { id: 1, name: 'breakfast', displayName: 'Breakfast', icon: '🍳', count: 45 },
     { id: 2, name: 'lunch', displayName: 'Lunch', icon: '🥪', count: 78 },
     { id: 3, name: 'dinner', displayName: 'Dinner', icon: '🍽️', count: 92 },
@@ -58,6 +67,14 @@ const Home = () => {
     { id: 8, name: 'salad', displayName: 'Salads', icon: '🥗', count: 55 },
     { id: 9, name: 'drink', displayName: 'Drinks', icon: '🍹', count: 30 },
     { id: 10, name: 'snack', displayName: 'Snacks', icon: '🥨', count: 70 }
+  ];
+
+  const cuisineCategories = [
+    { id: 11, name: 'italian', displayName: 'Italian', icon: '🍝', count: 85 },
+    { id: 12, name: 'spanish', displayName: 'Spanish', icon: '🥘', count: 62 },
+    { id: 13, name: 'chinese', displayName: 'Chinese', icon: '🥢', count: 78 },
+    { id: 14, name: 'american', displayName: 'American', icon: '🍔', count: 95 },
+    { id: 15, name: 'mexican', displayName: 'Mexican', icon: '🌮', count: 72 }
   ];
 
   // Helper to get initials from name
@@ -171,7 +188,7 @@ const Home = () => {
                 id={recipe.id || recipe._id}
                 title={recipe.title}
                 imageUrl={recipe.imageUrl}
-                rating={recipe.rating || 0}
+                rating={recipe.averageRating || 0}
                 cookTime={recipe.cookTime}
                 author={recipe.author}
                 tags={recipe.tags}
@@ -183,19 +200,41 @@ const Home = () => {
 
       <section className={styles.categories}>
         <h2>Browse by Category</h2>
-        <div className={styles.categoryGrid}>
-          {categories.map(category => (
-            <div 
-              key={category.id} 
-              className={styles.categoryCard}
-              onClick={() => handleCategoryClick(category)}
-              style={{ cursor: 'pointer' }}
-            >
-              <span className={styles.categoryIcon}>{category.icon}</span>
-              <h3>{category.displayName}</h3>
-              <p>{category.count} recipes</p>
-            </div>
-          ))}
+        
+        <div className={styles.categorySection}>
+          <h3>Cuisine Types</h3>
+          <div className={styles.categoryGrid}>
+            {cuisineCategories.map(category => (
+              <div 
+                key={category.id} 
+                className={styles.categoryCard}
+                onClick={() => handleCategoryClick(category)}
+                style={{ cursor: 'pointer' }}
+              >
+                <span className={styles.categoryIcon}>{category.icon}</span>
+                <h3>{category.displayName}</h3>
+                <p>{category.count} recipes</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.categorySection}>
+          <h3>Meal Types</h3>
+          <div className={styles.categoryGrid}>
+            {mealCategories.map(category => (
+              <div 
+                key={category.id} 
+                className={styles.categoryCard}
+                onClick={() => handleCategoryClick(category)}
+                style={{ cursor: 'pointer' }}
+              >
+                <span className={styles.categoryIcon}>{category.icon}</span>
+                <h3>{category.displayName}</h3>
+                <p>{category.count} recipes</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>

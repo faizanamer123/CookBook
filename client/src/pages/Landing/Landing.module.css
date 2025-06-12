@@ -199,8 +199,18 @@
 }
 
 .featureIcon {
-  font-size: 1.8rem;
-  color: white;
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: transform 0.3s ease;
+}
+
+.featureCard:hover .featureIcon {
+  transform: scale(1.1);
 }
 
 .featureTitle {

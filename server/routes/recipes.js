@@ -52,7 +52,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
     }
     
     const recipe = await Recipe.findById(recipeId)
-      .populate('author', 'username profilePicture');
+      .populate('author', 'username profilePicture')
+      .populate('comments.author', 'username profilePicture');
     
     if (!recipe) {
       console.error(`Recipe not found with ID: ${recipeId}`);

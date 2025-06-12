@@ -55,7 +55,7 @@ const RecipeDetails = () => {
       try {
         setLoading(true);
         const recipeRes = await axios.get(`${API_URL}/recipes/${id}`);
-        setRecipe(recipeRes.data);
+        const recipeData = recipeRes.data;
         
         // Check if user has liked the recipe
         if (user && token) {
@@ -74,9 +74,12 @@ const RecipeDetails = () => {
           }
         }
 
-        // Fetch comments if they exist
-        if (recipeRes.data.comments && recipeRes.data.comments.length > 0) {
-          setComments(recipeRes.data.comments);
+        // Set recipe data
+        setRecipe(recipeData);
+
+        // Set comments directly since they are now populated from the server
+        if (recipeData.comments && recipeData.comments.length > 0) {
+          setComments(recipeData.comments);
         }
       } catch (err) {
         console.error('Error fetching recipe:', err);
@@ -459,16 +462,29 @@ const RecipeDetails = () => {
                 <div key={comment._id} className={styles.comment}>
                   <div className={styles.commentHeader}>
                     <div className={styles.commentAuthor}>
-                      <span>{comment.author.username}</span>
+                      <span>{comment.author?.username || 'Unknown User'}</span>
+                      {user && comment.author?._id && comment.author._id !== user._id && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${comment.author._id}`);
+                          }}
+                          className={styles.profileLink}
+                        >
+                          View Profile
+                        </button>
+                      )}
                     </div>
                     {comment.rating > 0 && (
                       <StarRating rating={comment.rating} readOnly />
                     )}
                   </div>
                   <p className={styles.commentText}>{comment.content}</p>
-                  <span className={styles.commentDate}>
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
+                  <div className={styles.commentFooter}>
+                    <span className={styles.commentDate}>
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
               ))
             ) : (

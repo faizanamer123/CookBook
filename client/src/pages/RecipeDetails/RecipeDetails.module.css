@@ -170,40 +170,71 @@
   color: var(--text);
 }
 
-.ingredientsSection,
-.instructionsSection {
-  margin-bottom: 2rem;
+.ingredientsSection {
+  margin-bottom: 2.5rem;
+  background-color: var(--background);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.ingredientsSection h2,
-.instructionsSection h2 {
-  margin-bottom: 1rem;
+.ingredientsSection h2 {
+  margin-bottom: 1.5rem;
   color: var(--text);
+  font-size: 1.75rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.75rem;
 }
 
 .ingredientsList {
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
 }
 
 .ingredientItem {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background-color: #f8f9fa;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--card-background);
   border-radius: 8px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+}
+
+.ingredientItem:hover {
+  background-color: var(--hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .ingredientAmount {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text);
+  min-width: 80px;
+  text-align: right;
+  font-size: 0.95rem;
+  opacity: 0.9;
 }
 
 .ingredientName {
+  color: var(--text);
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.instructionsSection {
+  margin-bottom: 2rem;
+}
+
+.instructionsSection h2 {
+  margin-bottom: 1rem;
   color: var(--text);
 }
 
@@ -453,9 +484,9 @@
 
 .comment {
   padding: 1.5rem;
-  border: 1px solid #eee;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background-color: #fafafa;
+  background-color: var(--card-background);
 }
 
 .commentHeader {
@@ -466,46 +497,89 @@
 }
 
 .commentAuthor {
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.commentAuthor span {
+  font-weight: 600;
   color: var(--text);
+  font-size: 0.95rem;
+}
+
+.profileLink {
+  background: none;
+  border: none;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--primary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  background-color: var(--card-background);
+}
+
+.profileLink:hover {
+  background-color: var(--hover);
+  color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.profileLink:active {
+  transform: translateY(0);
 }
 
 .commentText {
-  margin: 0.75rem 0;
-  line-height: 1.6;
   color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.commentFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .commentDate {
-  display: block;
-  margin-top: 0.5rem;
-  color: var(--text);
-  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.noComments {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .loginPrompt {
   text-align: center;
-  padding: 1.5rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  color: var(--text);
+  color: var(--text-muted);
+  padding: 1rem;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
 .loginPrompt button {
   background: none;
   border: none;
-  color: #007bff;
+  color: var(--primary);
   cursor: pointer;
-  text-decoration: underline;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 0;
+  margin: 0 0.25rem;
 }
 
-.noComments {
-  text-align: center;
-  color: var(--text);
-  padding: 2rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
+.loginPrompt button:hover {
+  text-decoration: underline;
 }
 
 .error {

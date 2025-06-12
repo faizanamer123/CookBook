@@ -56,7 +56,7 @@ export const fetchRecipes = createAsyncThunk(
         title: recipe.title || 'Untitled Recipe',
         image: recipe.image || recipe.imageUrl || '',
         imageUrl: recipe.imageUrl || recipe.image || '',
-        rating: recipe.rating || 0,
+        rating: recipe.averageRating || 0,
         cookTime: recipe.cookTime || 0,
         tags: Array.isArray(recipe.tags) ? recipe.tags : [],
         likeCount: recipe.likeCount || 0,

@@ -17,7 +17,8 @@ const RecipeCard = (props) => {
     title = 'Untitled Recipe', 
     imageUrl, 
     image,
-    rating = 0, 
+    rating = 0,
+    averageRating = 0,
     cookTime = '', 
     author = '', 
     tags = [],
@@ -77,6 +78,9 @@ const RecipeCard = (props) => {
   
   const displayTags = Array.isArray(tags) ? tags.slice(0, 3) : [];
   const displayCookTime = typeof cookTime === 'number' ? `${cookTime} mins` : cookTime;
+
+  // Use averageRating if available, otherwise fall back to rating
+  const displayRating = averageRating || rating;
 
   const getImageUrl = () => {
     if (imageError) {
@@ -235,33 +239,24 @@ const RecipeCard = (props) => {
           )}
         </div>
       </div>
-      <div className={styles.content}>
+      <div className={styles.cardContent}>
         <h3 className={styles.title}>{title}</h3>
         <div className={styles.meta}>
           <div className={styles.rating}>
-            <FaStar className={styles.icon} />
-            <span>{rating ? rating.toFixed(1) : '0.0'}</span>
+            <FaStar className={styles.starIcon} />
+            <span>{displayRating.toFixed(1)}</span>
           </div>
           <div className={styles.cookTime}>
-            <FaClock className={styles.icon} />
+            <FaClock className={styles.clockIcon} />
             <span>{displayCookTime}</span>
           </div>
         </div>
-        <div className={styles.author}>
-          <FaUser className={styles.icon} />
-          <span>{authorName || 'Unknown'}</span>
-          {author && author.id && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/profile/${author.id || author._id}`);
-              }}
-              className={styles.profileButton}
-            >
-              View Profile
-            </button>
-          )}
-        </div>
+        {authorName && (
+          <div className={styles.author}>
+            <FaUser className={styles.userIcon} />
+            <span>{authorName}</span>
+          </div>
+        )}
         {displayTags.length > 0 && (
           <div className={styles.tags}>
             {displayTags.map((tag, index) => (
@@ -269,9 +264,6 @@ const RecipeCard = (props) => {
                 {tag}
               </span>
             ))}
-            {tags.length > 3 && (
-              <span className={styles.moreTag}>+{tags.length - 3}</span>
-            )}
           </div>
         )}
       </div>
@@ -286,6 +278,7 @@ RecipeCard.propTypes = {
   imageUrl: PropTypes.string,
   image: PropTypes.string,
   rating: PropTypes.number,
+  averageRating: PropTypes.number,
   cookTime: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   author: PropTypes.oneOfType([
     PropTypes.string,

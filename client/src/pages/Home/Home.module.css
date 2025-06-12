@@ -74,10 +74,39 @@
   color: var(--text);
 }
 
+.categorySection {
+  margin-bottom: 4rem;
+}
+
+.categorySection:last-child {
+  margin-bottom: 0;
+}
+
+.categorySection h3 {
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+  color: var(--text);
+  text-align: center;
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.categorySection h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
 .categoryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -86,8 +115,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
-  background: var(--background);
+  padding: 1.5rem;
+  background: var(--card-background);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   text-decoration: none;
   color: var(--text);
@@ -96,17 +126,19 @@
 
 .categoryCard:hover {
   transform: translateY(-5px);
-  box-shadow: var(--box-shadow-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary);
 }
 
 .categoryIcon {
-  font-size: 3rem;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
 }
 
 .categoryCard h3 {
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
+  text-align: center;
 }
 
 .categoryCard p {
@@ -136,5 +168,23 @@
   .categories h2 {
     font-size: 2rem;
     margin-bottom: 2rem;
+  }
+
+  .categorySection h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .categoryCard {
+    padding: 1rem;
+  }
+
+  .categoryIcon {
+    font-size: 2rem;
   }
 } 
