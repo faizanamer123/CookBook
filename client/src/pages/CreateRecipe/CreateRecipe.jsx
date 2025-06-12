@@ -413,16 +413,16 @@ const CreateRecipe = () => {
         <div className={styles.formGroup}>
           <label htmlFor="description" className={styles.label}>Description</label>
           <div className={styles.descriptionInputContainer}>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              className={`${styles.textarea} ${errors.description ? styles.textareaError : ''}`}
-              placeholder="Describe your recipe..."
-              disabled={isSubmitting}
-            />
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            className={`${styles.textarea} ${errors.description ? styles.textareaError : ''}`}
+            placeholder="Describe your recipe..."
+            disabled={isSubmitting}
+          />
             <button 
               type="button"
               className={styles.emojiButton}
@@ -645,7 +645,7 @@ const CreateRecipe = () => {
         )}
 
         <button
-          type="submit"
+          type="submit" 
           className={styles.submitButton}
           disabled={isSubmitting}
         >

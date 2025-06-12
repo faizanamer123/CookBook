@@ -122,12 +122,12 @@
   margin: 0;
   padding: 0;
   background: none;
-  color: var(--primary);
+  color: #7352af;
   border-radius: 0;
   font-size: 1.05rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  border-bottom: 2px solid var(--primary-light);
+  border-bottom: none;
   display: inline-block;
 }
 
@@ -151,4 +151,26 @@
 .categoryFilter strong {
   font-weight: 600;
   text-transform: capitalize;
+}
+
+.profileButton {
+  margin-top: 10px;
+  align-self: center;
+  padding: 6px 18px;
+  background: linear-gradient(90deg, #ece9f7 0%, #c7c3e6 100%);
+  color: #5a4b81;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(157, 126, 216, 0.08);
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
+.profileButton:hover {
+  background: linear-gradient(90deg, #d1c4e9 0%, #b39ddb 100%);
+  color: #4b3570;
+  box-shadow: 0 4px 16px rgba(124, 77, 255, 0.10);
 } 
