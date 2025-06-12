@@ -103,8 +103,32 @@
   transform: rotate(15deg);
 }
 
+.profileWrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(var(--primary-rgb, 108, 92, 231), 0.5);
+  border: 2px solid var(--primary);
+  transition: all 0.2s ease;
+}
+
+.profileWrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(var(--primary-rgb, 108, 92, 231), 0.7);
+}
+
+.profileImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .profileIconLink {
-  text-decoration: none;
+  display: block;
+  margin-right: 10px;
 }
 
 .avatar {

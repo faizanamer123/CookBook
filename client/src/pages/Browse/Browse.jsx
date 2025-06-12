@@ -25,10 +25,6 @@ const Browse = () => {
   });
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
     dispatch(fetchRecipes());
 
     // Get category from URL
@@ -53,43 +49,56 @@ const Browse = () => {
   const filteredRecipes = useMemo(() => {
     if (!Array.isArray(recipes)) return [];
     
-    return recipes.filter(recipe => {
-      if (!recipe) return false;
+    try {
+      return recipes.filter(recipe => {
+        if (!recipe) return false;
 
-      // Search term filter (by title, description, or tags)
-      const matchesSearch = !searchParams.searchTerm || 
-        (recipe.title && recipe.title.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
-        (recipe.description && recipe.description.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
-        (recipe.tags && recipe.tags.some(tag => 
-          typeof tag === 'string' && tag.toLowerCase().includes(searchParams.searchTerm.toLowerCase())
-        ));
+        try {
+          // Search term filter (by title, description, or tags)
+          const matchesSearch = !searchParams.searchTerm || 
+            (recipe.title && recipe.title.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
+            (recipe.description && recipe.description.toLowerCase().includes(searchParams.searchTerm.toLowerCase())) ||
+            (recipe.tags && Array.isArray(recipe.tags) && recipe.tags.some(tag => 
+              typeof tag === 'string' && tag.toLowerCase().includes(searchParams.searchTerm.toLowerCase())
+            ));
 
-      // Difficulty filter
-      const matchesDifficulty = !searchParams.filters.difficulty || 
-        recipe.difficulty === searchParams.filters.difficulty;
+          // Difficulty filter
+          const matchesDifficulty = !searchParams.filters.difficulty || 
+            recipe.difficulty === searchParams.filters.difficulty;
 
-      // Cook time filter
-      const matchesCookTime = !searchParams.filters.cookTime || 
-        (searchParams.filters.cookTime === 'quick' && recipe.cookTime < 30) ||
-        (searchParams.filters.cookTime === 'medium' && recipe.cookTime >= 30 && recipe.cookTime <= 60) ||
-        (searchParams.filters.cookTime === 'long' && recipe.cookTime > 60);
+          // Cook time filter
+          const matchesCookTime = !searchParams.filters.cookTime || 
+            (searchParams.filters.cookTime === 'quick' && recipe.cookTime < 30) ||
+            (searchParams.filters.cookTime === 'medium' && recipe.cookTime >= 30 && recipe.cookTime <= 60) ||
+            (searchParams.filters.cookTime === 'long' && recipe.cookTime > 60);
 
-      // Category filter (from tags)
-      const matchesCategory = !searchParams.filters.cuisine || 
-        (recipe.tags && recipe.tags.some(tag =>
-          typeof tag === 'string' && tag.toLowerCase() === searchParams.filters.cuisine.toLowerCase()
-        ));
-      
-      // Dietary preferences filter (from tags)
-      const matchesDietary = searchParams.filters.dietary.length === 0 || 
-        (recipe.dietaryRestrictions && searchParams.filters.dietary.every(pref => 
-          recipe.dietaryRestrictions.some(restriction => 
-            typeof restriction === 'string' && restriction.toLowerCase() === pref.toLowerCase()
-          )
-        ));
+          // Cuisine filter (from tags)
+          const matchesCuisine = !searchParams.filters.cuisine || 
+            (recipe.tags && Array.isArray(recipe.tags) && recipe.tags.some(tag =>
+              typeof tag === 'string' && tag.toLowerCase() === searchParams.filters.cuisine.toLowerCase()
+            ));
+          
+          // Dietary preferences filter (from tags)
+          const matchesDietary = !searchParams.filters.dietary || !Array.isArray(searchParams.filters.dietary) || 
+            searchParams.filters.dietary.length === 0 || 
+            (recipe.dietaryRestrictions && Array.isArray(recipe.dietaryRestrictions) && 
+              searchParams.filters.dietary.every(pref => 
+                recipe.dietaryRestrictions.some(restriction => 
+                  typeof restriction === 'string' && restriction.toLowerCase() === pref.toLowerCase()
+                )
+              )
+            );
 
-      return matchesSearch && matchesDifficulty && matchesCookTime && matchesCategory && matchesDietary;
-    });
+          return matchesSearch && matchesDifficulty && matchesCookTime && matchesCuisine && matchesDietary;
+        } catch (error) {
+          console.error("Error filtering recipe:", error, recipe);
+          return false;
+        }
+      });
+    } catch (error) {
+      console.error("Error in filteredRecipes:", error);
+      return [];
+    }
   }, [recipes, searchParams]);
 
   const getCategoryMessage = () => {

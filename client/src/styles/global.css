@@ -7,10 +7,12 @@
   --background-light: #F9F7FA;
   --text-dark-light: #2E2E2E;
   --text-muted-light: #6B6B6B;
+  --text-secondary-light: #3A3A3A;
   --hover-light: #B89FED;
   --success-light: rgba(39, 174, 96, 0.1);
   --error-light: rgba(231, 76, 60, 0.1);
   --border-light: #E0E0E0;
+  --input-background-light: #FFFFFF;
   
   /* Dark Theme Variables */
   --primary-dark: #6A5ACD;
@@ -18,9 +20,11 @@
   --background-dark: #1E1E2F;
   --text-light-dark: #F0EFFF;
   --text-muted-dark: #BBBBBB;
+  --text-secondary-dark: #DEDEDE;
   --success-dark: rgba(39, 174, 96, 0.2);
   --error-dark: rgba(231, 76, 60, 0.2);
   --border-dark: #2D2D3F;
+  --input-background-dark: #2A2A3F;
   
   /* Common Variables */
   --transition-speed: 0.3s;
@@ -37,10 +41,12 @@
   --background: var(--background-light);
   --text: var(--text-dark-light);
   --text-muted: var(--text-muted-light);
+  --text-secondary: var(--text-secondary-light);
   --hover: var(--hover-light);
   --success-light: var(--success-light);
   --error-light: var(--error-light);
   --border: var(--border-light);
+  --input-background: var(--input-background-light);
 }
 
 [data-theme='dark'] {
@@ -49,9 +55,11 @@
   --background: var(--background-dark);
   --text: var(--text-light-dark);
   --text-muted: var(--text-muted-dark);
+  --text-secondary: var(--text-secondary-dark);
   --success-light: var(--success-dark);
   --error-light: var(--error-dark);
   --border: var(--border-dark);
+  --input-background: var(--input-background-dark);
 }
 
 * {

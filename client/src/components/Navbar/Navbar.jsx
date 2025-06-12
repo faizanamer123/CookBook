@@ -131,20 +131,30 @@ const Navbar = () => {
             {user ? (
               <>
                 <Link to="/dashboard" className={styles.profileIconLink}>
-                  <div className={styles.avatar} style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: isDarkMode ? '#fff' : 'var(--primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 18,
-                    color: isDarkMode ? 'var(--primary)' : '#fff',
-                    fontWeight: 700,
-                    border: isDarkMode ? '2px solid var(--primary)' : 'none'
-                  }}>
-                    {getInitials(user.name)}
+                  <div className={styles.profileWrapper}>
+                    {user.profilePicture ? (
+                      <img 
+                        src={user.profilePicture}
+                        alt={user.username}
+                        className={styles.profileImage}
+                      />
+                    ) : (
+                      <div className={styles.avatar} style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: isDarkMode ? '#fff' : 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 18,
+                        color: isDarkMode ? 'var(--primary)' : '#fff',
+                        fontWeight: 700,
+                        border: isDarkMode ? '2px solid var(--primary)' : 'none'
+                      }}>
+                        {getInitials(user.username)}
+                      </div>
+                    )}
                   </div>
                 </Link>
                 <Button variant="outline" onClick={handleLogout} className={styles.desktopOnly}>Logout</Button>

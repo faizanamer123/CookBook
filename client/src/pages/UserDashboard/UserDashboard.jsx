@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import RecipeCard from '../../components/RecipeCard/RecipeCard';
 import Button from '../../components/Button/Button';
@@ -8,15 +8,18 @@ import styles from './UserDashboard.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { FaCamera, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import { fetchRecipes, fetchFavorites } from '../../store/recipesSlice';
 
 const UserDashboard = () => {
   const { user, updateProfile, updatePassword, uploadProfilePicture } = useAuth();
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const dispatch = useDispatch();
 
   const recipes = useSelector(state => state.recipes.recipes);
   const favorites = useSelector(state => state.recipes.favorites);
-  const favoriteRecipes = recipes.filter(recipe => favorites.includes(recipe.id));
+  const favoriteRecipes = recipes.filter(recipe => favorites.includes(recipe.id) || favorites.includes(recipe._id));
+  const recipesLoading = useSelector(state => state.recipes.loading);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -54,6 +57,7 @@ const UserDashboard = () => {
   const [showCropper, setShowCropper] = useState(false);
   const [imageToCrop, setImageToCrop] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -72,7 +76,16 @@ const UserDashboard = () => {
       }
     });
     setPicturePreview(user?.profilePicture || null);
-  }, [user, navigate]);
+    
+    // Load recipes and favorites
+    setLoadingSaved(true);
+    Promise.all([
+      dispatch(fetchRecipes()),
+      dispatch(fetchFavorites())
+    ]).finally(() => {
+      setLoadingSaved(false);
+    });
+  }, [user, navigate, dispatch]);
 
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
@@ -650,14 +663,28 @@ const UserDashboard = () => {
       {/* Saved Recipes Section */}
       <section className={styles.recipesSection}>
         <h2 className={styles.sectionTitle}>Your Saved Recipes</h2>
-        {favoriteRecipes.length > 0 ? (
+        {loadingSaved ? (
+          <div className={styles.loadingContainer}>
+            <div className={styles.loader}></div>
+            <p>Loading your saved recipes...</p>
+          </div>
+        ) : favoriteRecipes.length > 0 ? (
           <div className={styles.recipesGrid}>
             {favoriteRecipes.map(recipe => (
-              <RecipeCard key={recipe.id} {...recipe} />
+              <RecipeCard key={recipe.id || recipe._id} {...recipe} />
             ))}
           </div>
         ) : (
-          <p className={styles.noRecipes}>You haven't saved any recipes yet.</p>
+          <div className={styles.noRecipes}>
+            <p className={styles.noRecipesText}>You haven't saved any recipes yet.</p>
+            <p className={styles.noRecipesSubtext}>Browse recipes and click the bookmark icon to save your favorites!</p>
+            <button 
+              onClick={() => navigate('/browse')}
+              className={styles.browseButton}
+            >
+              Browse Recipes
+            </button>
+          </div>
         )}
       </section>
     </div>

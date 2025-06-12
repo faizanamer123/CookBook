@@ -1,10 +1,12 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar/Navbar';
 import './styles/global.css';
+import { useDispatch } from 'react-redux';
+import { fetchFavorites } from './store/recipesSlice';
 
 const Landing = lazy(() => import('./pages/Landing/Landing'));
 const Home = lazy(() => import('./pages/Home/Home'));
@@ -39,6 +41,14 @@ const PublicRoute = ({ children }) => {
 
 function AppRoutes() {
   const { user } = useAuth();
+  const dispatch = useDispatch();
+
+  // Load favorites when user is authenticated
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchFavorites());
+    }
+  }, [user, dispatch]);
 
   return (
     <div className="App">

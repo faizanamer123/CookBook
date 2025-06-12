@@ -1,39 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaStar, FaClock, FaUser, FaHeart, FaRegHeart, FaTrash, FaPencilAlt } from 'react-icons/fa';
+import { FaStar, FaClock, FaUser, FaHeart, FaRegHeart, FaTrash, FaPencilAlt, FaBookmark, FaRegBookmark } from 'react-icons/fa';
 import { DEFAULT_IMAGE } from '../../config';
 import { useAuth } from '../../context/AuthContext';
 import styles from './RecipeCard.module.css';
 import axios from 'axios';
 import { API_URL } from '../../config';
-import { useDispatch } from 'react-redux';
-import { fetchRecipes } from '../../store/recipesSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchRecipes, toggleFavoriteAsync } from '../../store/recipesSlice';
 
-const RecipeCard = ({ 
-  id, 
-  title, 
-  imageUrl, 
-  image,
-  rating = 0, 
-  cookTime = '', 
-  author = '', 
-  tags = [],
-  likeCount = 0,
-  isLiked = false,
-  showDelete = false
-}) => {
+const RecipeCard = (props) => {
+  const { 
+    id, 
+    _id,
+    title = 'Untitled Recipe', 
+    imageUrl, 
+    image,
+    rating = 0, 
+    cookTime = '', 
+    author = '', 
+    tags = [],
+    likeCount = 0,
+    isLiked = false,
+    showDelete = false,
+    ...otherProps
+  } = props;
+
   const { user, token } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [liked, setLiked] = useState(isLiked);
-  const [likes, setLikes] = useState(likeCount);
+  const [likes, setLikes] = useState(likeCount || 0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [imageError, setImageError] = useState(false);
+  
+  // Check if this recipe is in favorites
+  const favorites = useSelector(state => state.recipes.favorites);
+  const recipeId = id || _id;
+  const isFavorite = favorites.includes(id) || favorites.includes(_id);
 
+  // Fetch initial like status
+  useEffect(() => {
+    const fetchLikeStatus = async () => {
+      if (user && token && recipeId) {
+        try {
+          const response = await axios.get(`${API_URL}/recipes/${recipeId}/like`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          if (response.data) {
+            setLiked(response.data.liked);
+            setLikes(response.data.likeCount);
+          }
+        } catch (error) {
+          console.error('Error fetching like status:', error);
+        }
+      }
+    };
+    
+    fetchLikeStatus();
+  }, [recipeId, user, token]);
+
+  // Handle possible missing or malformed data
   const authorName = typeof author === 'object' ? author.username : author;
-  const isAuthor = typeof author === 'object' && user && author.id === user.id;
-  const displayTags = tags.slice(0, 3);
+  
+  // Check if current user is the author of this recipe
+  const isAuthor = user && typeof author === 'object' && (
+    (author.id && user.id && author.id === user.id) || 
+    (author._id && user._id && author._id === user._id) ||
+    (author.id && user._id && author.id === user._id) ||
+    (author._id && user.id && author._id === user.id)
+  );
+  
+  const displayTags = Array.isArray(tags) ? tags.slice(0, 3) : [];
   const displayCookTime = typeof cookTime === 'number' ? `${cookTime} mins` : cookTime;
 
   const getImageUrl = () => {
@@ -58,18 +100,43 @@ const RecipeCard = ({
       return;
     }
 
+    if (!recipeId) {
+      console.error('Recipe ID is missing');
+      return;
+    }
+
     try {
-      await axios.post(`${API_URL}/recipes/${id}/like`, {}, {
+      const response = await axios.post(`${API_URL}/recipes/${recipeId}/like`, {}, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       
-      setLiked(!liked);
-      setLikes(liked ? likes - 1 : likes + 1);
+      // Update state based on response from server
+      if (response.data) {
+        setLiked(response.data.isLiked);
+        setLikes(response.data.likes);
+      }
     } catch (error) {
       console.error('Error liking recipe:', error);
     }
+  };
+  
+  const handleSave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!recipeId) {
+      console.error('Recipe ID is missing');
+      return;
+    }
+    
+    dispatch(toggleFavoriteAsync(recipeId));
   };
 
   const handleDelete = async (e) => {
@@ -79,11 +146,16 @@ const RecipeCard = ({
     if (!window.confirm('Are you sure you want to delete this recipe?')) {
       return;
     }
+
+    if (!recipeId) {
+      console.error('Recipe ID is missing');
+      return;
+    }
     
     setIsDeleting(true);
     
     try {
-      await axios.delete(`${API_URL}/recipes/${id}`, {
+      await axios.delete(`${API_URL}/recipes/${recipeId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -99,11 +171,22 @@ const RecipeCard = ({
   const handleEdit = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/create?edit=${id}`);
+
+    if (!recipeId) {
+      console.error('Recipe ID is missing');
+      return;
+    }
+    
+    navigate(`/create?edit=${recipeId}`);
   };
 
+  // Guard against missing recipeId
+  if (!recipeId) {
+    return null;
+  }
+
   return (
-    <div className={styles.card} onClick={() => navigate(`/recipe/${id}`)}>
+    <div className={styles.card} onClick={() => navigate(`/recipe/${recipeId}`)}>
       <div className={styles.imageContainer}>
         <img 
           src={getImageUrl()}
@@ -120,6 +203,14 @@ const RecipeCard = ({
           >
             {liked ? <FaHeart /> : <FaRegHeart />}
             <span>{likes}</span>
+          </button>
+          
+          <button 
+            className={`${styles.actionButton} ${isFavorite ? styles.saved : ''}`}
+            onClick={handleSave}
+            aria-label={isFavorite ? "Unsave recipe" : "Save recipe"}
+          >
+            {isFavorite ? <FaBookmark /> : <FaRegBookmark />}
           </button>
           
           {isAuthor && (
@@ -163,7 +254,7 @@ const RecipeCard = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/profile/${author.id}`);
+                navigate(`/profile/${author.id || author._id}`);
               }}
               className={styles.profileButton}
             >
@@ -189,8 +280,9 @@ const RecipeCard = ({
 };
 
 RecipeCard.propTypes = {
-  id: PropTypes.string.isRequired,
-  title: PropTypes.string.isRequired,
+  id: PropTypes.string,
+  _id: PropTypes.string,
+  title: PropTypes.string,
   imageUrl: PropTypes.string,
   image: PropTypes.string,
   rating: PropTypes.number,
