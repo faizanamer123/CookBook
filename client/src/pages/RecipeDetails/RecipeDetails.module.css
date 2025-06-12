@@ -89,11 +89,19 @@
 }
 
 .actionButton.liked {
-  color: #dc3545;
+  background-color: #e74c3c;
+  color: white;
 }
 
 .actionButton.bookmarked {
-  color: #ffc107;
+  background-color: #f1c40f;
+  color: white;
+}
+
+/* Add glow effect to liked and bookmarked buttons */
+.actionButton.liked, 
+.actionButton.bookmarked {
+  box-shadow: 0 0 15px rgba(var(--primary-rgb, 108, 92, 231), 0.5);
 }
 
 .deleteButton {
@@ -298,6 +306,9 @@
 
 .starButton.readOnly {
   cursor: default;
+  pointer-events: none;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .filledStar {

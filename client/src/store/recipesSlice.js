@@ -1,12 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { API_URL } from '../config';
 
+// Helper to load data from localStorage
+const loadFavoritesFromStorage = () => {
+  try {
+    const storedFavorites = localStorage.getItem('favorites');
+    return storedFavorites ? JSON.parse(storedFavorites) : [];
+  } catch (error) {
+    console.error('Error loading favorites from local storage:', error);
+    return [];
+  }
+};
+
 const initialState = {
   recipes: [],
-  favorites: [],
+  favorites: loadFavoritesFromStorage(),
   loading: false,
   error: null,
   comments: {} // Store comments by recipe ID
+};
+
+// Helper to save favorites to localStorage
+const saveFavoritesToStorage = (favorites) => {
+  try {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  } catch (error) {
+    console.error('Error saving favorites to local storage:', error);
+  }
 };
 
 // Async thunks
@@ -39,6 +59,7 @@ export const fetchRecipes = createAsyncThunk(
         rating: recipe.rating || 0,
         cookTime: recipe.cookTime || 0,
         tags: Array.isArray(recipe.tags) ? recipe.tags : [],
+        likeCount: recipe.likeCount || 0,
         author: recipe.author 
           ? {
               ...recipe.author,
@@ -46,6 +67,38 @@ export const fetchRecipes = createAsyncThunk(
             }
           : { username: 'Unknown' }
       }));
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchFavorites = createAsyncThunk(
+  'recipes/fetchFavorites',
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return [];
+      
+      const response = await fetch(`${API_URL}/recipes/bookmarks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch favorites');
+      }
+      
+      const data = await response.json();
+      
+      // Return recipe IDs for favorites
+      const favoriteIds = Array.isArray(data) ? data.map(recipe => recipe._id || recipe.id) : [];
+      
+      // Save to localStorage
+      saveFavoritesToStorage(favoriteIds);
+      
+      return favoriteIds;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -87,6 +140,7 @@ export const fetchRecipeById = createAsyncThunk(
         ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
         steps: data.steps || '',
         tags: Array.isArray(data.tags) ? data.tags : [],
+        likeCount: data.likeCount || 0,
         author: data.author
           ? {
               ...data.author,
@@ -128,6 +182,7 @@ export const addRecipe = createAsyncThunk(
         imageUrl: data.imageUrl || data.image || '',
         rating: data.rating || 0,
         cookTime: data.cookTime || 0,
+        likeCount: data.likeCount || 0,
         tags: Array.isArray(data.tags) ? data.tags : [],
         author: data.author
           ? {
@@ -136,6 +191,37 @@ export const addRecipe = createAsyncThunk(
             }
           : { username: 'Unknown' }
       };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const toggleFavoriteAsync = createAsyncThunk(
+  'recipes/toggleFavoriteAsync',
+  async (recipeId, { getState, rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      
+      const state = getState();
+      const isFavorite = state.recipes.favorites.includes(recipeId);
+      const endpoint = `${API_URL}/recipes/${recipeId}/bookmark`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(isFavorite ? 'Failed to remove from favorites' : 'Failed to add to favorites');
+      }
+      
+      return { recipeId, isFavorite };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -154,6 +240,8 @@ const recipesSlice = createSlice({
       } else {
         state.favorites.splice(index, 1);
       }
+      // Save to localStorage
+      saveFavoritesToStorage(state.favorites);
     },
     addComment: (state, action) => {
       const { recipeId, comment } = action.payload;
@@ -190,6 +278,21 @@ const recipesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // Fetch favorites
+      .addCase(fetchFavorites.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchFavorites.fulfilled, (state, action) => {
+        state.loading = false;
+        state.favorites = action.payload;
+        // Save to localStorage
+        saveFavoritesToStorage(action.payload);
+      })
+      .addCase(fetchFavorites.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Fetch single recipe
       .addCase(fetchRecipeById.pending, (state) => {
         state.loading = true;
@@ -220,6 +323,19 @@ const recipesSlice = createSlice({
       .addCase(addRecipe.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Toggle favorite
+      .addCase(toggleFavoriteAsync.fulfilled, (state, action) => {
+        const { recipeId, isFavorite } = action.payload;
+        if (isFavorite) {
+          // Remove from favorites
+          state.favorites = state.favorites.filter(id => id !== recipeId);
+        } else {
+          // Add to favorites
+          state.favorites.push(recipeId);
+        }
+        // Save to localStorage
+        saveFavoritesToStorage(state.favorites);
       });
   }
 });

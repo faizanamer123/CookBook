@@ -6,6 +6,8 @@ import styles from './RecipeDetails.module.css';
 import Button from '../../components/Button/Button';
 import { FaHeart, FaRegHeart, FaBookmark, FaRegBookmark, FaEdit, FaTrash, FaArrowLeft, FaClock, FaUtensils, FaStar, FaRegStar, FaShare } from 'react-icons/fa';
 import { API_URL } from '../../config';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchFavorites, toggleFavoriteAsync } from '../../store/recipesSlice';
 
 const StarRating = ({ rating, onRatingChange, readOnly = false }) => {
   return (
@@ -28,28 +30,45 @@ const StarRating = ({ rating, onRatingChange, readOnly = false }) => {
 const RecipeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const dispatch = useDispatch();
+  const { user, token } = useAuth();
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   
+  // Get favorites from Redux store
+  const favorites = useSelector(state => state.recipes.favorites);
+  const isBookmarked = favorites.includes(id);
+  
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
+        setLoading(true);
         const recipeRes = await axios.get(`${API_URL}/recipes/${id}`);
         setRecipe(recipeRes.data);
         
-        if (user) {
-          // Check if user has liked the recipe
-          const likes = recipeRes.data.likes || [];
-          setIsLiked(likes.some(likeId => likeId === user._id));
+        // Check if user has liked the recipe
+        if (user && token) {
+          try {
+            const likeStatusRes = await axios.get(`${API_URL}/recipes/${id}/like`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (likeStatusRes.data) {
+              setIsLiked(likeStatusRes.data.liked);
+              setLikeCount(likeStatusRes.data.likeCount);
+            }
+          } catch (err) {
+            console.error('Error fetching like status:', err);
+          }
         }
 
         // Fetch comments if they exist
@@ -64,8 +83,12 @@ const RecipeDetails = () => {
       }
     };
 
+    // Fetch recipe data and favorites
     fetchRecipe();
-  }, [id, user]);
+    if (user && token) {
+      dispatch(fetchFavorites());
+    }
+  }, [id, user, token, dispatch]);
 
   const handleLikeToggle = async () => {
     if (!user) {
@@ -79,44 +102,28 @@ const RecipeDetails = () => {
         {},
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           }
         }
       );
 
-      setIsLiked(response.data.isLiked);
-      setRecipe(prev => ({
-        ...prev,
-        likes: response.data.likes || []
-      }));
+      if (response.data) {
+        setIsLiked(response.data.isLiked);
+        setLikeCount(response.data.likes);
+      }
     } catch (err) {
       console.error('Error toggling like:', err);
       setError('Failed to update like status');
     }
   };
 
-  const handleBookmarkToggle = async () => {
+  const handleBookmarkToggle = () => {
     if (!user) {
       navigate('/login');
       return;
     }
 
-    try {
-      const response = await axios.post(
-        `${API_URL}/recipes/${id}/bookmark`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-
-      setIsBookmarked(response.data.isBookmarked);
-    } catch (err) {
-      console.error('Error toggling bookmark:', err);
-      setError('Failed to update bookmark status');
-    }
+    dispatch(toggleFavoriteAsync(id));
   };
 
   const handleDeleteRecipe = async () => {
@@ -128,7 +135,7 @@ const RecipeDetails = () => {
     try {
       await axios.delete(`${API_URL}/recipes/${id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       navigate('/');
@@ -159,7 +166,7 @@ const RecipeDetails = () => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           }
         }
       );
@@ -221,7 +228,15 @@ const RecipeDetails = () => {
     return <div className={styles.notFound}>Recipe not found</div>;
   }
 
-  const isAuthor = user && recipe.author?._id === user._id;
+  // Check if current user is the author of this recipe
+  const isAuthor = user && recipe.author && (
+    (recipe.author.id && user.id && recipe.author.id === user.id) || 
+    (recipe.author._id && user._id && recipe.author._id === user._id) ||
+    (recipe.author.id && user._id && recipe.author.id === user._id) ||
+    (recipe.author._id && user.id && recipe.author._id === user.id)
+  );
+  
+  const cuisineType = recipe.cuisineType !== 'Other' ? recipe.cuisineType : null;
 
   return (
     <div className={styles.recipeDetailsContainer}>
@@ -244,7 +259,7 @@ const RecipeDetails = () => {
             aria-label={isLiked ? 'Unlike recipe' : 'Like recipe'}
           >
             {isLiked ? <FaHeart /> : <FaRegHeart />}
-            <span>{recipe.likes?.length || 0}</span>
+            <span>{likeCount}</span>
           </button>
           
           <button 
@@ -323,9 +338,9 @@ const RecipeDetails = () => {
             <span className={styles.difficultyTag}>{recipe.difficulty}</span>
           </div>
           
-          {recipe.cuisineType && (
+          {cuisineType && (
             <div className={styles.metaItem}>
-              <span className={styles.cuisineTag}>{recipe.cuisineType}</span>
+              <span className={styles.cuisineTag}>{cuisineType}</span>
             </div>
           )}
         </div>
@@ -339,14 +354,19 @@ const RecipeDetails = () => {
         <div className={styles.ingredientsSection}>
           <h2>Ingredients</h2>
           <ul className={styles.ingredientsList}>
-            {recipe.ingredients?.map((ingredient, index) => (
-              <li key={index} className={styles.ingredientItem}>
-                <span className={styles.ingredientAmount}>
-                  {ingredient.amount} {ingredient.unit}
-                </span>
-                <span className={styles.ingredientName}>{ingredient.name}</span>
-              </li>
-            ))}
+            {recipe.ingredients && 
+              // Create a map to deduplicate ingredients by using a unique key
+              [...new Set(recipe.ingredients.map(i => JSON.stringify(i)))]
+                .map(item => JSON.parse(item))
+                .map((ingredient, index) => (
+                  <li key={index} className={styles.ingredientItem}>
+                    <span className={styles.ingredientAmount}>
+                      {ingredient.amount} {ingredient.unit}
+                    </span>
+                    <span className={styles.ingredientName}>{ingredient.name}</span>
+                  </li>
+                ))
+            }
           </ul>
         </div>
 

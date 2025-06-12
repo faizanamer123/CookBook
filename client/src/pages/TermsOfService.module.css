@@ -5,24 +5,55 @@
 }
 
 .content {
-  background: var(--background-secondary);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: var(--background-secondary, var(--background));
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 8px 30px rgba(var(--primary-rgb, 108, 92, 231), 0.3),
+              0 0 15px rgba(var(--primary-rgb, 108, 92, 231), 0.5);
+  border: 1px solid rgba(var(--primary-rgb, 108, 92, 231), 0.1);
+  transition: all 0.3s ease;
+}
+
+.content:hover {
+  box-shadow: 0 12px 40px rgba(var(--primary-rgb, 108, 92, 231), 0.4),
+              0 0 20px rgba(var(--primary-rgb, 108, 92, 231), 0.6);
 }
 
 .title {
-  color: var(--text-primary);
+  color: var(--text-primary, var(--text));
   font-size: 2.5rem;
   margin-bottom: 2rem;
   text-align: center;
   font-weight: 700;
+  text-shadow: 0 0 10px rgba(var(--primary-rgb, 108, 92, 231), 0.6);
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(to right, rgba(var(--primary-rgb, 108, 92, 231), 0.2), 
+                                       rgba(var(--primary-rgb, 108, 92, 231), 0.8), 
+                                       rgba(var(--primary-rgb, 108, 92, 231), 0.2));
+  box-shadow: 0 0 10px rgba(var(--primary-rgb, 108, 92, 231), 0.6);
+  border-radius: 2px;
 }
 
 .section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(var(--primary-rgb, 108, 92, 231), 0.2);
+  transition: all 0.3s ease;
+}
+
+.section:hover {
+  transform: translateY(-5px);
 }
 
 .section:last-child {
@@ -32,34 +63,78 @@
 }
 
 .sectionTitle {
-  color: var(--text-primary);
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
+  color: var(--text-primary, var(--text));
+  font-size: 1.6rem;
+  margin-bottom: 1.2rem;
   font-weight: 600;
+  text-shadow: 0 0 8px rgba(var(--primary-rgb, 108, 92, 231), 0.4);
+  position: relative;
+  display: inline-block;
+}
+
+.sectionTitle::before {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, rgba(var(--primary-rgb, 108, 92, 231), 0.8), rgba(var(--primary-rgb, 108, 92, 231), 0.2));
+  box-shadow: 0 0 5px rgba(var(--primary-rgb, 108, 92, 231), 0.4);
 }
 
 .text {
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 1rem;
+  color: var(--text-secondary, var(--text));
+  line-height: 1.7;
+  margin-bottom: 1.2rem;
+  font-size: 1.05rem;
 }
 
 .link {
   color: var(--primary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 0 2px;
+  text-shadow: 0 0 3px rgba(var(--primary-rgb, 108, 92, 231), 0.3);
+}
+
+.link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 5px rgba(var(--primary-rgb, 108, 92, 231), 0.6);
 }
 
 .link:hover {
-  color: var(--primary-hover);
-  text-decoration: underline;
+  color: var(--primary-hover, var(--primary));
+  text-shadow: 0 0 6px rgba(var(--primary-rgb, 108, 92, 231), 0.5);
+}
+
+.link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 .contact {
   color: var(--primary);
   font-weight: 500;
   margin-top: 0.5rem;
+  text-shadow: 0 0 3px rgba(var(--primary-rgb, 108, 92, 231), 0.4);
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: rgba(var(--primary-rgb, 108, 92, 231), 0.1);
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(var(--primary-rgb, 108, 92, 231), 0.2);
+  border: 1px solid rgba(var(--primary-rgb, 108, 92, 231), 0.2);
 }
 
 @media (max-width: 768px) {
@@ -68,7 +143,7 @@
   }
 
   .content {
-    padding: 1.5rem;
+    padding: 1.8rem;
   }
 
   .title {
@@ -76,6 +151,6 @@
   }
 
   .sectionTitle {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
   }
 } 

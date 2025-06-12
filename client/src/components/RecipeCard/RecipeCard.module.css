@@ -77,12 +77,26 @@
 }
 
 .actionButton.liked {
-  background: var(--primary);
+  background-color: #e74c3c;
   color: white;
 }
 
 .actionButton.liked:hover {
   background: var(--hover);
+}
+
+.actionButton.saved {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.actionButton.saved:hover {
+  background: var(--hover);
+}
+
+.actionButton.liked, 
+.actionButton.saved {
+  box-shadow: 0 0 15px rgba(var(--primary-rgb, 108, 92, 231), 0.5);
 }
 
 .deleteButton {
