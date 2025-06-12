@@ -78,10 +78,15 @@
 
 .tag {
   padding: 6px 12px;
-  background: var(--primary-light, #d8d5f9);
-  color: var(--primary, #6c5ce7);
+  background: linear-gradient(90deg, #b39ddb 0%, #7c4dff 100%);
+  color: #fff;
   border-radius: 50px;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 8px #b39ddb, 0 0 16px rgba(124, 77, 255, 0.25);
+  text-shadow: 0 1px 6px #7c4dff99;
+  transition: background 0.2s, color 0.2s;
 }
 
 .recipesSection {

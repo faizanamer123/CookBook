@@ -178,17 +178,31 @@ const Browse = () => {
         ) : (
           <div className={styles.recipesGrid}>
             {filteredRecipes.map(recipe => (
-              <RecipeCard
-                key={recipe.id}
-                id={recipe.id}
-                title={recipe.title}
-                imageUrl={recipe.imageUrl}
-                rating={recipe.averageRating}
-                cookTime={recipe.cookTime}
-                author={recipe.author}
-                tags={recipe.tags}
-                likeCount={recipe.likes?.length || 0}
-              />
+              <div key={recipe.id || recipe._id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+                <RecipeCard
+                  id={recipe.id}
+                  title={recipe.title}
+                  imageUrl={recipe.imageUrl}
+                  rating={recipe.averageRating}
+                  cookTime={recipe.cookTime}
+                  author={recipe.author}
+                  tags={recipe.tags}
+                  likeCount={recipe.likes?.length || 0}
+                />
+                {(recipe.author && (recipe.author.id || recipe.author._id)) && (
+                  <button
+                    className={styles.profileButton}
+                    onClick={e => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      navigate(`/profile/${recipe.author.id || recipe.author._id}`);
+                    }}
+                    style={{ marginTop: '10px', alignSelf: 'center' }}
+                  >
+                    View {recipe.author.username || recipe.author.name || 'Creator'} Profile
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         )}

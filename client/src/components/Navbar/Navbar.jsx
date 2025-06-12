@@ -139,19 +139,19 @@ const Navbar = () => {
                         className={styles.profileImage}
                       />
                     ) : (
-                      <div className={styles.avatar} style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: '50%',
-                        background: isDarkMode ? '#fff' : 'var(--primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 18,
-                        color: isDarkMode ? 'var(--primary)' : '#fff',
-                        fontWeight: 700,
-                        border: isDarkMode ? '2px solid var(--primary)' : 'none'
-                      }}>
+                  <div className={styles.avatar} style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    background: isDarkMode ? '#fff' : 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 18,
+                    color: isDarkMode ? 'var(--primary)' : '#fff',
+                    fontWeight: 700,
+                    border: isDarkMode ? '2px solid var(--primary)' : 'none'
+                  }}>
                         {getInitials(user.username)}
                       </div>
                     )}
