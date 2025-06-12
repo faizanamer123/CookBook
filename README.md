@@ -107,6 +107,8 @@ JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRE=30d
 
 # Google OAuth Configuration
+API_URL=your_ApiSide_url
+CLIENT_URL=your_ClientSide_url
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALLBACK_URL=your_authorized_url
