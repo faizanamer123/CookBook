@@ -3,16 +3,17 @@
   background: var(--background);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--box-shadow);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
   text-decoration: none;
   height: 100%;
   width: 100%;
+  border: 1px solid var(--border);
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: var(--box-shadow-hover);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .imageContainer {
@@ -67,13 +68,13 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: var(--box-shadow);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
 }
 
 .actionButton:hover {
   background: var(--hover);
-  box-shadow: var(--box-shadow-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .actionButton.liked {
@@ -82,7 +83,7 @@
 }
 
 .actionButton.liked:hover {
-  background: var(--hover);
+  background-color: #c0392b;
 }
 
 .actionButton.saved {
@@ -91,12 +92,12 @@
 }
 
 .actionButton.saved:hover {
-  background: var(--hover);
+  background-color: #d4ac0d;
 }
 
 .actionButton.liked, 
 .actionButton.saved {
-  box-shadow: 0 0 15px rgba(var(--primary-rgb, 108, 92, 231), 0.5);
+  box-shadow: none;
 }
 
 .deleteButton {
@@ -152,11 +153,12 @@
 
 .icon {
   font-size: 14px;
-  color: var(--primary);
+  color: #9d7ed8;
 }
 
 .rating .icon {
-  color: var(--rating, #f1c40f);
+  color: #9d7ed8;
+  filter: drop-shadow(0 0 3px rgba(157, 126, 216, 0.5));
 }
 
 .author {
@@ -171,8 +173,8 @@
 
 .tag {
   font-size: 0.75rem;
-  background: var(--secondary);
-  color: var(--text);
+  background: rgba(157, 126, 216, 0.15);
+  color: #7352af;
   padding: 4px 8px;
   border-radius: 50px;
   white-space: nowrap;
@@ -180,29 +182,31 @@
 
 .moreTag {
   font-size: 0.75rem;
-  background: var(--primary);
+  background: #9d7ed8;
   color: white;
   padding: 4px 8px;
   border-radius: 50px;
   white-space: nowrap;
   font-weight: 500;
+  box-shadow: 0 0 8px rgba(157, 126, 216, 0.5);
 }
 
 .profileButton {
   margin-left: 10px;
   padding: 2px 10px;
-  background: var(--primary);
+  background: #9d7ed8;
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 0.8rem;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .profileButton:hover {
-  background: var(--hover);
+  background: #7352af;
+  box-shadow: 0 0 8px #9d7ed8, 0 0 16px rgba(157, 126, 216, 0.4);
 }
 
 /* Loading skeleton styles */
