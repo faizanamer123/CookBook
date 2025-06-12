@@ -136,11 +136,14 @@
   height: 40px;
   border-radius: 50%;
   background: var(--primary);
-  color: white;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.18), 0 0 2px #fff;
 }
 
 .mobileMenu {

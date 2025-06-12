@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addRecipe } from '../../store/recipesSlice';
@@ -7,6 +7,8 @@ import styles from './CreateRecipe.module.css';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import axios from 'axios';
+import { FaPlus, FaMinus, FaTimes, FaSmile } from 'react-icons/fa';
+import EmojiPicker from 'emoji-picker-react';
 
 const CreateRecipe = () => {
   const { user, token } = useAuth();
@@ -33,6 +35,8 @@ const CreateRecipe = () => {
   const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef(null);
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -364,6 +368,20 @@ const CreateRecipe = () => {
   // Update page title based on mode
   const pageTitle = isEditMode ? 'Edit Recipe' : 'Create New Recipe';
 
+  // Add click outside handler to close emoji picker
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [emojiPickerRef]);
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -394,16 +412,37 @@ const CreateRecipe = () => {
 
         <div className={styles.formGroup}>
           <label htmlFor="description" className={styles.label}>Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            onBlur={handleBlur}
-            className={`${styles.textarea} ${errors.description ? styles.textareaError : ''}`}
-            placeholder="Describe your recipe..."
-            disabled={isSubmitting}
-          />
+          <div className={styles.descriptionInputContainer}>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              className={`${styles.textarea} ${errors.description ? styles.textareaError : ''}`}
+              placeholder="Describe your recipe..."
+              disabled={isSubmitting}
+            />
+            <button 
+              type="button"
+              className={styles.emojiButton}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              aria-label="Add emoji"
+            >
+              <FaSmile className={styles.emojiIcon} /> <span className={styles.emojiButtonText}>Emojis</span>
+            </button>
+            {showEmojiPicker && (
+              <div className={styles.emojiPickerContainer} ref={emojiPickerRef}>
+                <EmojiPicker onEmojiClick={(emojiData) => {
+                  setFormData({
+                    ...formData,
+                    description: formData.description + emojiData.emoji
+                  });
+                  setShowEmojiPicker(false);
+                }} />
+              </div>
+            )}
+          </div>
           {errors.description && <span className={styles.error}>{errors.description}</span>}
         </div>
 
@@ -494,23 +533,23 @@ const CreateRecipe = () => {
           <div className={styles.ingredientsList}>
             {formData.ingredients.map((ingredient, index) => (
               <div key={index} className={styles.ingredientItem}>
+                <div className={styles.ingredientNumber}>{index + 1}</div>
                 <input
                   type="text"
                   value={ingredient}
                   onChange={(e) => handleIngredientChange(index, e.target.value)}
-                  onBlur={handleBlur}
-                  className={`${styles.input} ${errors.ingredients ? styles.inputError : ''}`}
-                  placeholder={`Ingredient ${index + 1}`}
+                  placeholder="e.g. 2 cups flour"
+                  className={styles.input}
                   disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => removeIngredient(index)}
                   className={styles.removeButton}
+                  disabled={isSubmitting || formData.ingredients.length <= 1}
                   aria-label="Remove ingredient"
-                  disabled={isSubmitting}
                 >
-                  ×
+                  <FaTimes />
                 </button>
               </div>
             ))}
@@ -521,9 +560,8 @@ const CreateRecipe = () => {
             className={styles.addButton}
             disabled={isSubmitting}
           >
-            + Add Ingredient
+            <FaPlus /> Add Ingredient
           </button>
-          {errors.ingredients && <span className={styles.error}>{errors.ingredients}</span>}
         </div>
 
         <div className={styles.formGroup}>
@@ -531,23 +569,22 @@ const CreateRecipe = () => {
           <div className={styles.instructionsList}>
             {formData.instructions.map((instruction, index) => (
               <div key={index} className={styles.instructionItem}>
-                <div className={styles.stepNumber}>{index + 1}</div>
+                <div className={styles.instructionNumber}>{index + 1}</div>
                 <textarea
                   value={instruction}
                   onChange={(e) => handleInstructionChange(index, e.target.value)}
-                  onBlur={handleBlur}
-                  className={`${styles.textarea} ${errors.instructions ? styles.textareaError : ''}`}
-                  placeholder={`Step ${index + 1}`}
+                  placeholder="Describe this step..."
+                  className={styles.textarea}
                   disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => removeInstruction(index)}
                   className={styles.removeButton}
-                  aria-label="Remove instruction"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || formData.instructions.length <= 1}
+                  aria-label="Remove step"
                 >
-                  ×
+                  <FaTimes />
                 </button>
               </div>
             ))}
@@ -558,26 +595,26 @@ const CreateRecipe = () => {
             className={styles.addButton}
             disabled={isSubmitting}
           >
-            + Add Step
+            <FaPlus /> Add Step
           </button>
-          {errors.instructions && <span className={styles.error}>{errors.instructions}</span>}
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.label}>Tags</label>
-          <div className={styles.tagsContainer}>
-            {formData.tags.map(tag => (
-              <span key={tag} className={styles.tag}>
+          <div className={styles.tagsList}>
+            {formData.tags.map((tag, index) => (
+              <div key={index} className={styles.tag}>
                 {tag}
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
-                  aria-label={`Remove tag ${tag}`}
+                  className={styles.tagRemove}
                   disabled={isSubmitting}
+                  aria-label={`Remove tag ${tag}`}
                 >
-                  ×
+                  <FaTimes />
                 </button>
-              </span>
+              </div>
             ))}
           </div>
           <div className={styles.tagInput}>
@@ -585,17 +622,19 @@ const CreateRecipe = () => {
               type="text"
               value={newTag}
               onChange={handleTagInputChange}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addTag(e);
-                }
-              }}
-              className={`${styles.input} ${errors.tags ? styles.inputError : ''}`}
-              placeholder="Add a tag"
+              onKeyPress={(e) => handleKeyPress(e, addTag)}
+              placeholder="Add a tag and press Enter"
+              className={styles.tagInputField}
               disabled={isSubmitting}
             />
-            <Button type="button" variant="secondary" disabled={isSubmitting} onClick={addTag}>Add</Button>
+            <button
+              type="button"
+              onClick={addTag}
+              className={styles.addButton}
+              disabled={isSubmitting || !newTag.trim()}
+            >
+              <FaPlus /> Add
+            </button>
           </div>
         </div>
 
@@ -605,15 +644,13 @@ const CreateRecipe = () => {
           </div>
         )}
 
-        <Button 
-          type="submit" 
-          variant="primary" 
+        <button
+          type="submit"
           className={styles.submitButton}
           disabled={isSubmitting}
-          loading={loading}
         >
-          {loading ? 'Creating Recipe...' : 'Create Recipe'}
-        </Button>
+          {isSubmitting ? 'Saving...' : isEditMode ? 'Update Recipe' : 'Create Recipe'}
+        </button>
       </form>
     </div>
   );

@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import styles from './RecipeDetails.module.css';
 import Button from '../../components/Button/Button';
-import { FaHeart, FaRegHeart, FaBookmark, FaRegBookmark, FaEdit, FaTrash, FaArrowLeft, FaClock, FaUtensils, FaStar, FaRegStar, FaShare } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaBookmark, FaRegBookmark, FaEdit, FaTrash, FaArrowLeft, FaClock, FaUtensils, FaStar, FaRegStar, FaShare, FaSmile } from 'react-icons/fa';
 import { API_URL } from '../../config';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFavorites, toggleFavoriteAsync } from '../../store/recipesSlice';
+import EmojiPicker from 'emoji-picker-react';
 
 const StarRating = ({ rating, onRatingChange, readOnly = false }) => {
   return (
@@ -42,6 +43,8 @@ const RecipeDetails = () => {
   const [newRating, setNewRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef(null);
   
   // Get favorites from Redux store
   const favorites = useSelector(state => state.recipes.favorites);
@@ -89,6 +92,20 @@ const RecipeDetails = () => {
       dispatch(fetchFavorites());
     }
   }, [id, user, token, dispatch]);
+
+  // Add click outside handler to close emoji picker
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [emojiPickerRef]);
 
   const handleLikeToggle = async () => {
     if (!user) {
@@ -214,6 +231,11 @@ const RecipeDetails = () => {
     } catch (err) {
       console.error('Error sharing recipe:', err);
     }
+  };
+
+  const handleEmojiClick = (emojiData) => {
+    setNewComment(prev => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
   };
 
   if (loading) {
@@ -395,13 +417,28 @@ const RecipeDetails = () => {
                 <label>Your Rating:</label>
                 <StarRating rating={newRating} onRatingChange={setNewRating} />
               </div>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Share your thoughts about this recipe..."
-                className={styles.commentTextarea}
-                required
-              />
+              <div className={styles.commentInputContainer}>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Share your thoughts about this recipe..."
+                  className={styles.commentTextarea}
+                  required
+                />
+                <button 
+                  type="button"
+                  className={styles.emojiButton}
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  aria-label="Add emoji"
+                >
+                  <FaSmile className={styles.emojiIcon} /> <span className={styles.emojiButtonText}>Emojis</span>
+                </button>
+                {showEmojiPicker && (
+                  <div className={styles.emojiPickerContainer} ref={emojiPickerRef}>
+                    <EmojiPicker onEmojiClick={handleEmojiClick} />
+                  </div>
+                )}
+              </div>
               <Button 
                 type="submit" 
                 variant="primary" 

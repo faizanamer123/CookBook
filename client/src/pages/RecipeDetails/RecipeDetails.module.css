@@ -85,17 +85,20 @@
 }
 
 .actionButton:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--hover);
+  box-shadow: none;
 }
 
 .actionButton.liked {
   background-color: #e74c3c;
   color: white;
+  box-shadow: none;
 }
 
 .actionButton.bookmarked {
   background-color: #f1c40f;
   color: white;
+  box-shadow: none;
 }
 
 /* Add glow effect to liked and bookmarked buttons */
@@ -115,8 +118,9 @@
 .recipeContent {
   background-color: #fff;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 40px rgba(108, 92, 231, 0.4);
   padding: 2rem;
+  border: 1px solid #2d2342;
 }
 
 .recipeTitle {
@@ -261,21 +265,143 @@
   border-radius: 12px;
 }
 
-.commentTextarea {
+.commentInputContainer {
+  position: relative;
   width: 100%;
-  min-height: 100px;
-  padding: 1rem;
-  margin: 1rem 0;
-  border: 1px solid #ddd;
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.commentTextarea {
+  flex: 1;
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   resize: vertical;
   font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  background-color: var(--background);
+  color: var(--text);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.commentTextarea:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+.emojiButton {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: var(--background);
+  border: 1px solid #9d7ed8;
+  font-size: 1rem;
+  color: #9d7ed8;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 30px;
+  gap: 0.4rem;
+  box-shadow: none;
+}
+
+.emojiButtonText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #9d7ed8;
+}
+
+.emojiIcon {
+  color: #9d7ed8;
+  font-size: 1.2rem;
+  filter: none;
+}
+
+.emojiButton:hover {
+  background-color: var(--hover);
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+.emojiPickerContainer {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  transform: scale(0.75);
+  transform-origin: bottom right;
+  margin-bottom: 10px;
+  border: 3px solid #9d7ed8;
+}
+
+/* Customize emoji picker scroll bars and elements */
+.emojiPickerContainer :global(.EmojiPickerReact) {
+  --epr-hover-bg-color: #f7f7f7;
+  --epr-focus-bg-color: #f7f7f7;
+  --epr-highlight-color: #9d7ed8;
+  --epr-search-border-color: #9d7ed8;
+  --epr-category-icon-active-color: #9d7ed8;
+  --epr-text-color: #222 !important;
+  --epr-bg-color: #fff;
+}
+
+.emojiPickerContainer :global(.epr-emoji-category-label),
+.emojiPickerContainer :global(.epr-emoji-category-label span),
+.emojiPickerContainer :global(.epr-emoji-category-label button),
+.emojiPickerContainer :global(.epr-search),
+.emojiPickerContainer :global(.epr-search input),
+.emojiPickerContainer :global(.epr-body),
+.emojiPickerContainer :global(.epr-emoji),
+.emojiPickerContainer :global(.epr-emoji span) {
+  color: #222 !important;
+}
+
+/* Fix scroll bar and make it cute */
+.emojiPickerContainer :global(.epr-body::-webkit-scrollbar) {
+  width: 8px;
+}
+
+.emojiPickerContainer :global(.epr-body::-webkit-scrollbar-track) {
+  background: var(--background);
+}
+
+.emojiPickerContainer :global(.epr-body::-webkit-scrollbar-thumb) {
+  background-color: #9d7ed8;
+  border-radius: 20px;
+}
+
+/* Make arrow buttons smaller and cuter */
+.emojiPickerContainer :global(.epr-header .epr-header-overlay button),
+.emojiPickerContainer :global(.epr-emoji-category-label button) {
+  padding: 4px;
+  font-size: 12px;
+  background-color: var(--background);
+  color: #9d7ed8;
+  border-radius: 50%;
+  border: 1px solid #9d7ed8;
+  width: 22px;
+  height: 22px;
+  box-shadow: none;
+}
+
+/* Emoji animation */
+@keyframes emojiPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.emojiIcon {
+  transition: all 0.3s ease;
+}
+
+.emojiButton:hover .emojiIcon {
+  animation: emojiPulse 1s ease infinite;
 }
 
 .ratingInput {
@@ -956,4 +1082,18 @@
   color: var(--text) !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+.emojiPickerContainer {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  transform: scale(0.75);
+  transform-origin: bottom right;
+  margin-bottom: 10px;
+  border: 3px solid #9d7ed8;
 } 

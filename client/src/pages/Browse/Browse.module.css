@@ -110,19 +110,25 @@
 
 .categoryInfo {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .categoryFilter {
   margin: 0;
-  padding: 0.5rem 1rem;
-  background-color: var(--primary-light);
+  padding: 0;
+  background: none;
   color: var(--primary);
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-bottom: 2px solid var(--primary-light);
+  display: inline-block;
 }
 
 .clearFilter {
